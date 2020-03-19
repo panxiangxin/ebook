@@ -56,13 +56,18 @@ public class BookAPI {
 						 @RequestParam(value = "bookFile") MultipartFile file,
 						 @RequestParam(value = "book") String book,
 						 @RequestParam(value = "bookImg") MultipartFile img) throws Exception {
+		
+		//书籍大小
+		long size = file.getSize();
+		
 		String bookUrls = fileService.upload(file, request, UpFileTypeEnum.EBOOK);
 		//上传书籍封面
 		String imgUrl = fileService.upload(img, request, UpFileTypeEnum.EBOOK_COVER);
 		//相关操作
 		UpBookDTO upBookDTO = JSON.parseObject(book, UpBookDTO.class);
 		//存入book
-		Long booId = bookService.insert(upBookDTO, bookUrls, imgUrl);
+		Long booId = bookService.insert(upBookDTO, bookUrls, imgUrl, size);
+		
 		//分隔章节 后台进行
 		chapterService.splitBook(file, upBookDTO.getBookName(), booId);
 		log.info("{} is ok", upBookDTO.getBookName());
@@ -78,4 +83,5 @@ public class BookAPI {
 		List<String> chapterNames = chapterService.getChapterName(bookId);
 		return new ResponseResult<>(ResultCode.CLICK_OK, chapterNames);
 	}
+	
 }

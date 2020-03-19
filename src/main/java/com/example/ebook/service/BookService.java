@@ -56,7 +56,7 @@ public class BookService {
 		return bookMapper.selectByPrimaryKey(id);
 	}
 	
-	public Long insert(UpBookDTO upBookDTO, String bookUrls, String imgUrl) {
+	public Long insert(UpBookDTO upBookDTO, String bookUrls, String imgUrl, Long size) {
 		
 		Book book = new Book();
 		book.setBookName(upBookDTO.getBookName());
@@ -65,7 +65,7 @@ public class BookService {
 		book.setTags(upBookDTO.getTags());
 		book.setBookUrl(bookUrls);
 		book.setBookStamps(upBookDTO.getStamps());
-		book.setBookSize(144);
+		book.setBookSize(size);
 		book.setDate(System.currentTimeMillis());
 		book.setBio(upBookDTO.getBio());
 		
