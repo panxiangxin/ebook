@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+
+    <context id="DB2Tables" targetRuntime="MyBatis3">
+        <plugin type="org.mybatis.generator.plugins.RowBoundsPlugin"></plugin>
+
+        <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
+                        connectionURL="jdbc:mysql://120.77.168.102:3306/ebook?useUnicode=true&amp;characterEncoding=utf8&amp;characterSetResults=utf8&amp;useSSL=false"
+                        userId="root"
+                        password="803309">
+            <property name="nullCatalogMeansCurrent" value="true"/>
+        </jdbcConnection>
+        <javaTypeResolver >
+            <property name="forceBigDecimals" value="false" />
+        </javaTypeResolver>
+
+        <javaModelGenerator targetPackage="com.example.ebook.model" targetProject="src/main/java">
+            <property name="enableSubPackages" value="true" />
+            <property name="trimStrings" value="true" />
+        </javaModelGenerator>
+
+        <sqlMapGenerator targetPackage="mapper"  targetProject="src/main/resources">
+            <property name="enableSubPackages" value="true" />
+        </sqlMapGenerator>
+
+        <javaClientGenerator type="XMLMAPPER" targetPackage="com.example.ebook.mapper"  targetProject="src/main/java">
+            <property name="enableSubPackages" value="true" />
+        </javaClientGenerator>
+
+        <table tableName="user" domainObjectName="User" >
+        </table>
+        <table tableName="book" domainObjectName="Book" >
+        </table>
+        <table tableName="book_order" domainObjectName="BookOrder" >
+        </table>
+        <table tableName="post" domainObjectName="Post" >
+        </table>
+        <table tableName="stamps_order" domainObjectName="stamp_Order" >
+        </table>
+        <table tableName="announcement" domainObjectName="Announcement" >
+        </table>
+        <table tableName="comment" domainObjectName="Comment" >
+        </table>
+        <table tableName="notification" domainObjectName="Notification">
+        </table>
+    </context>
+</generatorConfiguration>
