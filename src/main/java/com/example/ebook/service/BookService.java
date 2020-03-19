@@ -1,5 +1,6 @@
 package com.example.ebook.service;
 
+import com.example.ebook.dto.UpBookDTO;
 import com.example.ebook.mapper.BookExtMapper;
 import com.example.ebook.mapper.BookMapper;
 import com.example.ebook.model.Book;
@@ -8,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,5 +54,22 @@ public class BookService {
 	public Book getBookById(String bookId) {
 		Long id = Long.parseLong(bookId);
 		return bookMapper.selectByPrimaryKey(id);
+	}
+	
+	public Long insert(UpBookDTO upBookDTO, String bookUrls, String imgUrl) {
+		
+		Book book = new Book();
+		book.setBookName(upBookDTO.getBookName());
+		book.setImgUrl(imgUrl);
+		book.setAuthor(upBookDTO.getAuthor());
+		book.setTags(upBookDTO.getTags());
+		book.setBookUrl(bookUrls);
+		book.setBookStamps(upBookDTO.getStamps());
+		book.setBookSize(144);
+		book.setDate(System.currentTimeMillis());
+		book.setBio(upBookDTO.getBio());
+		
+		bookMapper.insertSelective(book);
+		return book.getId();
 	}
 }

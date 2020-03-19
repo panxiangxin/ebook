@@ -24,7 +24,7 @@ public enum ResultCode {
 	TARGET_PARAM_NOT_FOUND(false,40008,"回复的主题不存在"),
 	TYPE_PARAM_WRONG(false, 40009, "评论类型错误"),
 	COMMENT_NOT_FOUND(false,400011,"回复的评论不存在"),
-	BOOK_NOT_FOUND(false,40010,"评论的书籍不存在"),
+	BOOK_NOT_FOUND(false,40010,"书籍不存在"),
 	RECEIVER_NOT_FOUND(false,40012,"被评论人不存在");
 	
 	//操作是否成功

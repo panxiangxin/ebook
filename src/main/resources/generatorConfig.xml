@@ -33,7 +33,8 @@
 
         <table tableName="user" domainObjectName="User" >
         </table>
-        <table tableName="book" domainObjectName="Book" >
+        <table tableName="book" domainObjectName="Book">
+            <generatedKey column="id" sqlStatement="MySql" identity="true"/>
         </table>
         <table tableName="book_order" domainObjectName="BookOrder" >
         </table>
@@ -44,6 +45,8 @@
         <table tableName="announcement" domainObjectName="Announcement" >
         </table>
         <table tableName="comment" domainObjectName="Comment" >
+        </table>
+        <table tableName="chapter" domainObjectName="Chapter">
         </table>
         <table tableName="notification" domainObjectName="Notification">
         </table>
