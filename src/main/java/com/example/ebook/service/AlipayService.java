@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Map;
 
 /**
  * @author pxx
@@ -21,7 +20,7 @@ public interface AlipayService {
 	 * @param totalAmount   订单价格
 	 * @param subject       商品名称
 	 */
-	String webPagePay(String outTradeNo,Integer totalAmount,String subject) throws Exception;
+	String webPagePay(String outTradeNo, Double totalAmount, String subject) throws Exception;
 	
 	/**
 	 * app端订单支付

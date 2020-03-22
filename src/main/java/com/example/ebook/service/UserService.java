@@ -20,6 +20,16 @@ public class UserService {
 	@Autowired
 	private UserMapper userMapper;
 	
+	public User findUserById(Long id) {
+		UserExample userExample = new UserExample();
+		userExample.createCriteria()
+				.andIdEqualTo(id);
+		List<User> users = userMapper.selectByExample(userExample);
+		if (users.size() != 0) {
+			return users.get(0);
+		}
+		return null;
+	}
 	
 	public User findByUsername(LoginUserDTO user) {
 		UserExample userExample = new UserExample();

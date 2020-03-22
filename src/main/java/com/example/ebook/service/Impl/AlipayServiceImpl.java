@@ -7,9 +7,16 @@ import com.alipay.api.domain.AlipayTradeWapPayModel;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.*;
 import com.example.ebook.config.AlipayConfig;
+import com.example.ebook.mapper.StampOrderMapper;
+import com.example.ebook.mapper.UserMapper;
+import com.example.ebook.model.StampOrder;
+import com.example.ebook.model.User;
 import com.example.ebook.service.AlipayService;
+import com.example.ebook.util.OrderCodeFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -27,6 +34,12 @@ import java.util.Map;
 @Service
 public class AlipayServiceImpl implements AlipayService {
 	
+	@Autowired
+	private StampOrderMapper stampOrderMapper;
+	
+	@Autowired
+	private UserMapper userMapper;
+	
 	/** 调取支付宝接口 web端支付*/
 	DefaultAlipayClient alipayClient = new DefaultAlipayClient(
 			AlipayConfig.GATEWAYURL, AlipayConfig.APP_ID, AlipayConfig.MERCHANT_PRIVATE_KEY, "json", AlipayConfig.CHARSET, AlipayConfig.ALIPAY_PUBLIC_KEY, AlipayConfig.SIGN_TYPE);
@@ -37,7 +50,7 @@ public class AlipayServiceImpl implements AlipayService {
 	
 	
 	@Override
-	public String webPagePay(String outTradeNo, Integer totalAmount, String subject) throws Exception {
+	public String webPagePay(String outTradeNo, Double totalAmount, String subject) throws Exception {
 		
 		AlipayTradePagePayRequest alipayRequest = new AlipayTradePagePayRequest();
 		/** 同步通知，支付完成后，支付成功页面*/
@@ -135,14 +148,15 @@ public class AlipayServiceImpl implements AlipayService {
 	 * @param request
 	 * @param response
 	 */
+	@Transactional
 	@Override
 	public void paymentCallback(HttpServletRequest request, HttpServletResponse response) {
-		System.out.println("---------------------------支付宝进入异步通知--------------------------");
+		log.info("---------------------------支付宝进入异步通知--------------------------");
 		String resultFail = "fail";
 		//获取支付宝GET过来反馈信息
 		Map<String, String> params = new HashMap<>();
 		Map requestParams = request.getParameterMap();
-		System.out.println("返回的map----------------" + requestParams);
+//		log.info("返回的map----------------" + requestParams);
 		for (Iterator<String> iter = requestParams.keySet().iterator(); iter.hasNext(); ) {
 			String name = (String) iter.next();
 			String[] values = (String[]) requestParams.get(name);
@@ -150,14 +164,12 @@ public class AlipayServiceImpl implements AlipayService {
 			for (int i = 0; i < values.length; i++) {
 				valueStr = (i == values.length - 1) ? valueStr + values[i] : valueStr + values[i] + ",";
 			}
-			//乱码解决，这段代码在出现乱码时使用
-//			valueStr = new String(valueStr.getBytes("ISO-8859-1"), "utf-8");
 			params.put(name, valueStr);
 		}
 		
-		log.info("params={}", params);
-		
-		boolean signVerified = false; //调用SDK验证签名
+//		log.info("params={}", params);
+		//调用SDK验证签名
+		boolean signVerified = false;
 		try {
 			signVerified = AlipaySignature.rsaCheckV1(params, AlipayConfig.ALIPAY_PUBLIC_KEY, AlipayConfig.CHARSET, AlipayConfig.SIGN_TYPE);
 		} catch (AlipayApiException e) {
@@ -180,8 +192,29 @@ public class AlipayServiceImpl implements AlipayService {
 		// 支付成功修改订单状态
 		if ("TRADE_FINISHED".equals(trade_status) || "TRADE_SUCCESS".equals(trade_status)) {
 			//业务处理，主要是更新订单状态
-			
-			System.out.println("---------------------------支付成功--------------------------");
+			long channel = OrderCodeFactory.getShortParam(out_trade_no);
+//			log.info("channel: {}", channel);
+			long type = OrderCodeFactory.getServiceType(out_trade_no);
+//			log.info("type: {}", type);
+			long userId = OrderCodeFactory.getLongParam(out_trade_no);
+//			log.info("userId: {}", userId);
+			//订单入库操作
+			StampOrder stampOrder = new StampOrder();
+			stampOrder.setSecondId(trade_no);
+			stampOrder.setType((int)type);
+			stampOrder.setChannel((int)channel);
+			stampOrder.setMoney(trade_price.doubleValue());
+			stampOrder.setGmtCreate(System.currentTimeMillis());
+			stampOrder.setId(out_trade_no);
+			stampOrder.setUserId(userId);
+			stampOrderMapper.insert(stampOrder);
+			log.info("-----------------------订单入库成功--------------------------");
+			//用户积分增加
+			User user = userMapper.selectByPrimaryKey(userId);
+			user.setStamps(user.getStamps() + trade_price.doubleValue());
+			userMapper.updateByPrimaryKeySelective(user);
+			log.info("------------------------用户充值积分增加----------------------");
+			log.info("---------------------------支付成功--------------------------");
 		}
 		responseBody(response, resultFail);
 	}

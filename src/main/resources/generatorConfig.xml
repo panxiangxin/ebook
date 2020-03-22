@@ -40,7 +40,7 @@
         </table>
         <table tableName="post" domainObjectName="Post" >
         </table>
-        <table tableName="stamps_order" domainObjectName="stamp_Order" >
+        <table tableName="stamps_order" domainObjectName="StampOrder" >
         </table>
         <table tableName="announcement" domainObjectName="Announcement" >
         </table>

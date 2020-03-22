@@ -2,6 +2,7 @@ package com.example.ebook.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.auth0.jwt.JWT;
 import com.example.ebook.dto.LoginUserDTO;
 import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.dto.RegisterUserDTO;
@@ -91,6 +92,18 @@ public class UserAPI {
 		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 	
+	@GetMapping("/refresh")
+	public Object refreshUser(HttpServletRequest request) {
+		JSONObject jsonObject=new JSONObject();
+		String oldToken = request.getHeader("token");
+		String id = JWT.decode(oldToken).getAudience().get(0);
+		Long userId = Long.parseLong(id);
+		User user = userService.findUserById(userId);
+		String newToken = JwtUtil.getToken(user);
+		jsonObject.put("token", newToken);
+		jsonObject.put("user", user);
+		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
+	}
 	@UserLoginToken
 	@GetMapping("/getMessage")
 	public String getMessage(){

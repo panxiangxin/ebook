@@ -2,9 +2,13 @@ package com.example.ebook.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alipay.api.AlipayApiException;
+import com.example.ebook.dto.InvestOrderDTO;
+import com.example.ebook.enums.InvestChannelEnum;
+import com.example.ebook.enums.OrderTypeEnum;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.AlipayService;
+import com.example.ebook.util.OrderCodeFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -25,15 +29,29 @@ public class PayController {
 	@Autowired
 	private AlipayService alipayService;
 	
-	@GetMapping("go")
-	public Object goAlipay() throws Exception {
+	@PostMapping("go")
+	public Object goPay(@RequestBody InvestOrderDTO investOrderDTO) throws Exception {
 		
-		/** 模仿数据库，从后台调数据*/
-		String outTradeNo = "199603106212123414131723";
-		Integer totalAmount = 1;
-		String subject = "苹果28";
+		Integer channel;
+		if (investOrderDTO.getType().equals(InvestChannelEnum.ALIPAY.getType())) {
+			channel = InvestChannelEnum.ALIPAY.getType();
+		}else {
+			channel = InvestChannelEnum.WEIXIN.getType();
+		}
+		String outTradeNo = OrderCodeFactory.genSerialNum(
+				OrderTypeEnum.MONEY_INVEST.getType(),
+				channel,
+				investOrderDTO.getUserId()
+				);
+		String subject = investOrderDTO.getSubject();
+		Double money = investOrderDTO.getMoney();
+		String pay;
+		if (investOrderDTO.getType().equals(InvestChannelEnum.ALIPAY.getType())) {
+			 pay = alipayService.webPagePay(outTradeNo, money, subject);
+		}else {
+			pay = "weixin";
+		}
 		
-		String pay = alipayService.webPagePay(outTradeNo, totalAmount, subject);
 		
 		return new ResponseResult<>(ResultCode.CLICK_OK, pay);
 	}
