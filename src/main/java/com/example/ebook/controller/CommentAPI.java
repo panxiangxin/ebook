@@ -3,6 +3,7 @@ package com.example.ebook.controller;
 import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.dto.CommentCreateDTO;
 import com.example.ebook.dto.CommentDTO;
+import com.example.ebook.dto.UserCommentDTO;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.model.Comment;
 import com.example.ebook.response.ResponseResult;
@@ -32,10 +33,10 @@ public class CommentAPI {
 		if (commentCreateDTO.getContent() == null || StringUtils.isBlank(commentCreateDTO.getContent())) {
 		return new ResponseResult<>(ResultCode.CONTENT_EMPTY);
 		}
-		System.out.println(commentCreateDTO);
 		Comment comment =new Comment();
 		comment.setParentId(commentCreateDTO.getParentId());
 		comment.setType(commentCreateDTO.getType());
+		comment.setCommentTopic(commentCreateDTO.getCommentTopic());
 		comment.setCommentator(commentCreateDTO.getCommentator());
 		comment.setGmtCreate(System.currentTimeMillis());
 		comment.setGmtModified(System.currentTimeMillis());
@@ -52,5 +53,11 @@ public class CommentAPI {
 	public Object comment(@PathVariable("type") Integer type,@PathVariable("id") Long id) {
 		List<CommentDTO> list = commentService.list(type, id);
 		return new ResponseResult<>(ResultCode.CLICK_OK, list);
+	}
+	
+	@GetMapping("/user/{id}")
+	public Object getUserComment(@PathVariable("id") Long id) {
+		List<UserCommentDTO> userCommentById = commentService.getUserCommentById(id);
+		return new ResponseResult<>(ResultCode.CLICK_OK, userCommentById);
 	}
 }

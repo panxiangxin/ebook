@@ -42,17 +42,14 @@ public class UserService {
 		return null;
 	}
 	
-	public void createOrUpdate(User user) {
+	public void create(User user) {
 	
 	UserExample example = new UserExample();
 		example.createCriteria()
 				.andUserNameEqualTo(user.getUserName());
 		List<User> users = userMapper.selectByExample(example);
 		
-		if (users.size() != 0) {
-			User dbUser = users.get(0);
-			userMapper.updateByPrimaryKeySelective(dbUser);
-		}else {
+		if (users.size() == 0) {
 			userMapper.insertSelective(user);
 		}
 	}
@@ -64,5 +61,9 @@ public class UserService {
 		List<User> users = userMapper.selectByExample(example);
 		
 		return users.size() != 0;
+	}
+	
+	public void update(User existsUser) {
+		userMapper.updateByPrimaryKeySelective(existsUser);
 	}
 }

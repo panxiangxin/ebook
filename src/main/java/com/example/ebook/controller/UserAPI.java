@@ -6,6 +6,7 @@ import com.auth0.jwt.JWT;
 import com.example.ebook.dto.LoginUserDTO;
 import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.dto.RegisterUserDTO;
+import com.example.ebook.dto.UpdateUserDTO;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-
 
 
 /**
@@ -46,34 +46,35 @@ public class UserAPI {
 	@CrossOrigin
 	@ApiOperation(value = "登录", notes = "hello测试api")
 	@PostMapping("/login")
-	public Object login(@RequestBody LoginUserDTO user){
-		JSONObject jsonObject=new JSONObject();
-		User userForBase=userService.findByUsername(user);
-		if(userForBase==null){
+	public Object login(@RequestBody LoginUserDTO user) {
+		JSONObject jsonObject = new JSONObject();
+		User userForBase = userService.findByUsername(user);
+		if (userForBase == null) {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
-		}else {
-			if (!userForBase.getPassword().equals(user.getPassword())){
+		} else {
+			if (!userForBase.getPassword().equals(user.getPassword())) {
 				throw new MyException(ResultCode.PASSWORD_ERROR);
-			}else {
+			} else {
 				String token = JwtUtil.getToken(userForBase);
-				System.out.println("token:"+token);
+				System.out.println("token:" + token);
 				jsonObject.put("token", token);
 				jsonObject.put("user", userForBase);
 			}
-			return new ResponseResult<>(ResultCode.CLICK_OK,jsonObject);
+			return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 		}
 	}
+	
 	@PostMapping("/register")
 	public Object register(HttpServletRequest request,
 						   @RequestParam(value = "img") MultipartFile file,
-						   @RequestParam(value = "user") String user){
+						   @RequestParam(value = "user") String user) {
 		
 		
 		String avatarUrl = fileService.upload(file, request, UpFileTypeEnum.USER_AVATAR);
 		
 		RegisterUserDTO registerUserDTO = JSON.parseObject(user, RegisterUserDTO.class);
 		
-		if(userService.isExistsUserByUserName(registerUserDTO.getUsername())){
+		if (userService.isExistsUserByUserName(registerUserDTO.getUsername())) {
 			return new ResponseResult<>(ResultCode.USERNAME_EXISTS);
 		}
 		User existsUser = new User();
@@ -87,14 +88,15 @@ public class UserAPI {
 		existsUser.setGmtCreate(System.currentTimeMillis());
 		existsUser.setAvatarUrl(avatarUrl);
 		
-		userService.createOrUpdate(existsUser);
+		userService.create(existsUser);
 		
 		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 	
+	@UserLoginToken
 	@GetMapping("/refresh")
 	public Object refreshUser(HttpServletRequest request) {
-		JSONObject jsonObject=new JSONObject();
+		JSONObject jsonObject = new JSONObject();
 		String oldToken = request.getHeader("token");
 		String id = JWT.decode(oldToken).getAudience().get(0);
 		Long userId = Long.parseLong(id);
@@ -104,9 +106,39 @@ public class UserAPI {
 		jsonObject.put("user", user);
 		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 	}
+	
 	@UserLoginToken
-	@GetMapping("/getMessage")
-	public String getMessage(){
-		return "你已通过验证";
+	@PostMapping("/update")
+	public Object updateUser(HttpServletRequest request,
+							 @RequestParam(value = "img",required = false) MultipartFile file,
+							 @RequestParam(value = "user") String user) {
+		
+		JSONObject jsonObject = new JSONObject();
+		UpdateUserDTO updateUserDTO = JSON.parseObject(user, UpdateUserDTO.class);
+		
+		User userById = userService.findUserById(updateUserDTO.getId());
+		if (userById == null) {
+			throw new MyException(ResultCode.USER_NOT_FOUND);
+		}
+		
+		System.out.println(updateUserDTO);
+		User existsUser = new User();
+		existsUser.setId(updateUserDTO.getId());
+		existsUser.setUserName(updateUserDTO.getUsername());
+		existsUser.setPassword(updateUserDTO.getPassword());
+		existsUser.setSex(updateUserDTO.getSex());
+		existsUser.setAge(updateUserDTO.getAge());
+		existsUser.setBio(updateUserDTO.getBio());
+		existsUser.setQq(updateUserDTO.getQq());
+		existsUser.setMail(updateUserDTO.getMail());
+		existsUser.setGmtCreate(System.currentTimeMillis());
+		if (file != null) {
+			String avatarUrl = fileService.upload(file, request, UpFileTypeEnum.USER_AVATAR);
+			existsUser.setAvatarUrl(avatarUrl);
+		}
+		userService.update(existsUser);
+		userById = userService.findUserById(updateUserDTO.getId());
+		jsonObject.put("user", userById);
+		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 	}
 }

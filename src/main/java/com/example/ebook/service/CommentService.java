@@ -1,6 +1,7 @@
 package com.example.ebook.service;
 
 import com.example.ebook.dto.CommentDTO;
+import com.example.ebook.dto.UserCommentDTO;
 import com.example.ebook.enums.CommentTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author pxx
@@ -139,5 +141,72 @@ public class CommentService {
 			commentDTO.setRecevier(secondReceiverMap.get(comment.getRecevierId()));
 			return commentDTO;
 		}).collect(Collectors.toList());
+	}
+	
+	public List<UserCommentDTO> getUserCommentById(Long id) {
+		
+		List<UserCommentDTO> userCommentDTOS = new ArrayList<>();
+		//包括评论内容 评论主题或者评论 评论对象
+		User user = userMapper.selectByPrimaryKey(id);
+		if (user == null) {
+			throw new MyException(ResultCode.USER_NOT_FOUND);
+		}
+		//获取用户所有评论
+		CommentExample commentExample = new CommentExample();
+		commentExample.createCriteria()
+				.andCommentatorEqualTo(id);
+		List<Comment> comments = commentMapper.selectByExampleWithBLOBs(commentExample);
+		
+		if (comments.size() == 0) {
+			return new ArrayList<>();
+		}
+		
+		Map<Long, Comment> commentMap = comments.stream().collect(Collectors.toMap(Comment::getId, comment -> comment));
+		//获取被评论人id集合
+		List<Long> receiverId = comments.stream().map(Comment::getRecevierId).collect(Collectors.toList());
+		//获取被评论人
+		UserExample userExample = new UserExample();
+		userExample.createCriteria()
+				.andIdIn(receiverId);
+		List<User> receivers = userMapper.selectByExample(userExample);
+		//转换为map对象
+		Map<Long, User> receiverMap = receivers.stream().collect(Collectors.toMap(User::getId, users -> users));
+		//将评论分类
+		List<Comment> bookComments = comments.stream().filter(comment -> CommentTypeEnum.BOOK.getType().equals(comment.getType())).collect(Collectors.toList());
+		List<Comment> commentsComment = comments.stream().filter(comment -> CommentTypeEnum.COMMENT.getType().equals(comment.getType())).collect(Collectors.toList());
+		
+		//首先处理书籍评论
+		//获取评论的书籍
+		
+		List<Long> booksId = comments.stream().map(Comment::getCommentTopic).collect(Collectors.toList());
+		BookExample bookExample = new BookExample();
+		bookExample.createCriteria()
+				.andIdIn(booksId);
+		List<Book> books = bookMapper.selectByExampleWithBLOBs(bookExample);
+		Map<Long, Book> bookMap = books.stream().collect(Collectors.toMap(Book::getId, book -> book));
+		
+		if(bookComments.size() != 0) {
+			List<UserCommentDTO> bookCommentsDTO = bookComments.stream().map(comment -> {
+				UserCommentDTO userCommentDTO = new UserCommentDTO();
+				BeanUtils.copyProperties(comment, userCommentDTO);
+				userCommentDTO.setCommentBook(bookMap.get(comment.getCommentTopic()));
+				return userCommentDTO;
+			}).collect(Collectors.toList());
+			userCommentDTOS.addAll(bookCommentsDTO);
+		}
+		if (commentsComment.size() != 0) {
+			//获取二级评论
+			List<UserCommentDTO> commentDTOS = commentsComment.stream().map(comment -> {
+				UserCommentDTO userCommentDTO = new UserCommentDTO();
+				BeanUtils.copyProperties(comment, userCommentDTO);
+				userCommentDTO.setCommentBook(bookMap.get(comment.getCommentTopic()));
+				userCommentDTO.setComment(commentMap.get(comment.getParentId()));
+				userCommentDTO.setReceiver(receiverMap.get(comment.getRecevierId()));
+				return userCommentDTO;
+			}).collect(Collectors.toList());
+			userCommentDTOS.addAll(commentDTOS);
+		}
+		
+		return userCommentDTOS;
 	}
 }

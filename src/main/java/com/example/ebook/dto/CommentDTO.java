@@ -17,6 +17,7 @@ public class CommentDTO {
 	private Long id;
 	private Long parentId;
 	private Integer type;
+	private Long commentTopic;
 	private Long commentator;
 	private Integer commentCount;
 	private Long gmtCreate;
