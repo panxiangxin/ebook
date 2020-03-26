@@ -1,20 +1,34 @@
 package com.example.ebook.service;
 
 import com.example.ebook.enums.UpFileTypeEnum;
+import com.example.ebook.exception.MyException;
+import com.example.ebook.exception.ResultCode;
 import com.example.ebook.util.FileHandleUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * @author pxx
  * Date 2020/3/3 12:27
  * @Description
  */
+@Slf4j
 @Service
 public class FileService {
 	
@@ -69,6 +83,44 @@ public class FileService {
 			return eBookUri;
 		} else {
 			return eBookCoverUri;
+		}
+	}
+	
+	
+	public ResponseEntity<byte[]> downloadFile(String filePath) throws IOException {
+		
+		File file = loadFileAsResource(filePath);
+		
+		// 设置下载文件名称，以下两种方式均可
+		 String fileName = new String(file.getName().getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+		//String fileName = URLEncoder.encode(file.getName(), "utf-8");
+		HttpHeaders httpHeaders = new HttpHeaders();
+		// 通知浏览器以下载文件方式打开
+		ContentDisposition contentDisposition =
+				ContentDisposition.builder("attachment").filename(fileName).build();
+		httpHeaders.setContentDisposition(contentDisposition);
+		// application/octet_stream设置MIME为任意二进制数据
+		httpHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		 //使用apache commons-io 里边的 FileUtils工具类
+		byte[] bytes = FileUtils.readFileToByteArray(file);
+		return new ResponseEntity<>(bytes,
+				httpHeaders, HttpStatus.OK);
+		// 使用spring自带的工具类也可以 FileCopyUtils
+//		return new ResponseEntity<>(FileCopyUtils.copyToByteArray(file),
+//				httpHeaders, HttpStatus.OK);
+	}
+	public File loadFileAsResource(String filePath) {
+		
+		String path = filePath.replaceAll("\\\\", "/");
+		try {
+			UrlResource resource = new UrlResource(path);
+			File file = new File(uploadFolder + eBookPath + Objects.requireNonNull(resource.getFilename()));
+			if (file.exists()) {
+				return file;
+			}
+			throw new MyException(ResultCode.FILE_NOT_FOUND);
+		} catch (MalformedURLException e) {
+			throw new MyException(ResultCode.FILE_NOT_FOUND);
 		}
 	}
 }

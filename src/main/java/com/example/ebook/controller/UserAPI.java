@@ -10,6 +10,7 @@ import com.example.ebook.dto.UpdateUserDTO;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
+import com.example.ebook.model.Book;
 import com.example.ebook.model.User;
 import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.FileService;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 
 /**
@@ -140,5 +142,13 @@ public class UserAPI {
 		userById = userService.findUserById(updateUserDTO.getId());
 		jsonObject.put("user", userById);
 		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
+	}
+	
+	
+	@GetMapping("/getUserBook/{id}")
+	public Object userBook(@PathVariable("id") Long id) {
+		
+		List<Book> userBook = userService.getUserBook(id);
+		return new ResponseResult<>(ResultCode.CLICK_OK, userBook);
 	}
 }

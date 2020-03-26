@@ -1,22 +1,36 @@
 package com.example.ebook.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.auth0.jwt.JWT;
+import com.example.ebook.annotation.UserLoginToken;
+import com.example.ebook.dto.ReturnBookDTO;
 import com.example.ebook.dto.UpBookDTO;
+import com.example.ebook.enums.InvestChannelEnum;
+import com.example.ebook.enums.OrderTypeEnum;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
+import com.example.ebook.mapper.StampOrderMapper;
 import com.example.ebook.model.Book;
+import com.example.ebook.model.BookOrder;
+import com.example.ebook.model.StampOrder;
+import com.example.ebook.model.User;
 import com.example.ebook.response.ResponseResult;
-import com.example.ebook.service.BookService;
-import com.example.ebook.service.ChapterService;
-import com.example.ebook.service.FileService;
+import com.example.ebook.service.*;
+import com.example.ebook.util.OrderCodeFactory;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.List;
 
 
@@ -36,18 +50,22 @@ public class BookAPI {
 	private FileService fileService;
 	@Autowired
 	private ChapterService chapterService;
+	@Autowired
+	private BookOrderService bookOrderService;
 	
 	@GetMapping("/books")
 	public Object books(String tags) {
-		List<Book> bookList = bookService.list(tags);
+		List<ReturnBookDTO> bookList = bookService.list(tags);
 		return new ResponseResult<>(ResultCode.CLICK_OK, bookList);
 	}
 	
 	@GetMapping("/getBook")
-	public Object book(String bookId) {
-		System.out.println(bookId);
-		Book book = bookService.getBookById(bookId);
-		return new ResponseResult<>(ResultCode.CLICK_OK, book);
+	public Object book(String bookId, HttpServletRequest request) {
+		
+		
+		ReturnBookDTO returnBook = bookService.findBookHasBought(bookId, request);
+		
+		return new ResponseResult<>(ResultCode.CLICK_OK, returnBook);
 	}
 	
 	@Transactional
@@ -84,4 +102,19 @@ public class BookAPI {
 		return new ResponseResult<>(ResultCode.CLICK_OK, chapterNames);
 	}
 	
+	@UserLoginToken
+	@PostMapping("/buy")
+	public Object buyBook(@RequestParam("userId") String userId, @RequestParam("bookId") String bookId) {
+		
+		bookOrderService.insertBookOrder(userId, bookId);
+		
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@GetMapping("/download")
+	public Object download(@RequestParam("userId") String userId, @RequestParam("bookId") String bookId ) throws IOException {
+		return bookService.downloadBook(userId, bookId);
+		
+	}
 }

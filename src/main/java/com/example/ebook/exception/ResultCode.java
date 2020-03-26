@@ -25,8 +25,10 @@ public enum ResultCode {
 	TYPE_PARAM_WRONG(false, 40009, "评论类型错误"),
 	COMMENT_NOT_FOUND(false,400011,"回复的评论不存在"),
 	BOOK_NOT_FOUND(false,40010,"书籍不存在"),
-	RECEIVER_NOT_FOUND(false,40012,"被评论人不存在");
-	
+	RECEIVER_NOT_FOUND(false,40012,"被评论人不存在"),
+	USER_STAMPS_FAIL(false,40013,"用户积分不够 无法购买"),
+	BOOK_ORDER_NOT_FOUND(false, 40014, "用户未购买此书"),
+	FILE_NOT_FOUND(false, 40015, "文件不存在"),;
 	//操作是否成功
 	boolean success;
 	//操作代码
