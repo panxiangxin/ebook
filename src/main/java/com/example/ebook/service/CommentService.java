@@ -3,11 +3,11 @@ package com.example.ebook.service;
 import com.example.ebook.dto.CommentDTO;
 import com.example.ebook.dto.UserCommentDTO;
 import com.example.ebook.enums.CommentTypeEnum;
+import com.example.ebook.enums.NotificationEnum;
+import com.example.ebook.enums.NotificationStatusEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
-import com.example.ebook.mapper.BookMapper;
-import com.example.ebook.mapper.CommentMapper;
-import com.example.ebook.mapper.UserMapper;
+import com.example.ebook.mapper.*;
 import com.example.ebook.model.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author pxx
@@ -29,9 +28,15 @@ public class CommentService {
 	@Autowired
 	private CommentMapper commentMapper;
 	@Autowired
+	private CommentExtMapper commentExtMapper;
+	@Autowired
 	private BookMapper bookMapper;
 	@Autowired
+	private BookExtMapper bookExtMapper;
+	@Autowired
 	private UserMapper userMapper;
+	@Autowired
+	private NotificationMapper notificationMapper;
 	
 	@Transactional
 	public void insert(Comment comment) {
@@ -50,9 +55,14 @@ public class CommentService {
 			}
 			
 			commentMapper.insertSelective(comment);
-			//加一操作 后续添加
+			//加一操作 增加书籍评论数
+			Book parentBook = new Book();
+			book.setId(book.getId());
+			parentBook.setCommentCount(1);
+			bookExtMapper.incCommentCount(book);
+			// 书籍没有通知消息 增加通知消息
 		}
-		//回复一级评论一级、一级评论下面的二级评论
+		//回复书籍一级评论一级、一级评论下面的二级评论
 		if (comment.getType().equals(CommentTypeEnum.COMMENT.getType())) {
 			Comment dbComment = commentMapper.selectByPrimaryKey(comment.getParentId());
 			if (dbComment == null) {
@@ -62,9 +72,19 @@ public class CommentService {
 			if (receiver == null) {
 				throw new MyException(ResultCode.RECEIVER_NOT_FOUND);
 			}
+			User commentator = userMapper.selectByPrimaryKey(comment.getCommentator());
+			if (commentator == null) {
+				throw new MyException(ResultCode.USER_NOT_FOUND);
+			}
 			commentMapper.insertSelective(comment);
-			//增加评论数 后续添加
-			
+			//增加评论数
+			Comment parentComment = new Comment();
+			Book book = bookMapper.selectByPrimaryKey(comment.getCommentTopic());
+			parentComment.setId(comment.getParentId());
+			parentComment.setCommentCount(1);
+			commentExtMapper.incCommentCount(parentComment);
+			//创建通知
+			createNotify(comment, comment.getRecevierId(),NotificationEnum.REPLY_COMMENT,commentator.getUserName(),book.getBookName(),book.getId());
 		}
 	}
 	
@@ -208,5 +228,22 @@ public class CommentService {
 		}
 		
 		return userCommentDTOS;
+	}
+	
+	private void createNotify(Comment record, Long receiver, NotificationEnum notificationEnum, String notifierName, String outerTitle, Long outerId) {
+		
+		if (receiver.equals(record.getCommentator())) {
+			return;
+		}
+		Notification notification = new Notification();
+		notification.setNotifier(record.getCommentator());
+		notification.setStatus(NotificationStatusEnum.UNREAD.getStatus());
+		notification.setReceiver(receiver);
+		notification.setOuterid(outerId);
+		notification.setType(notificationEnum.getType());
+		notification.setGmtCreate(System.currentTimeMillis());
+		notification.setNotifierName(notifierName);
+		notification.setOuterTitle(outerTitle);
+		notificationMapper.insert(notification);
 	}
 }

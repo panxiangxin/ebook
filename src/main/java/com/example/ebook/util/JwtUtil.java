@@ -3,7 +3,11 @@ package com.example.ebook.util;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.example.ebook.model.User;
+import com.example.ebook.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 /**
@@ -25,5 +29,12 @@ public class JwtUtil {
 						.withExpiresAt(end)
 						.sign(Algorithm.HMAC256(user.getPassword()));
 		return token;
+	}
+	
+	public static Long getUserIdByToken(HttpServletRequest request) {
+		
+		String oldToken = request.getHeader("token");
+		String uid = JWT.decode(oldToken).getAudience().get(0);
+		return Long.parseLong(uid);
 	}
 }

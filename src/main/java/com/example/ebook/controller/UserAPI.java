@@ -7,6 +7,7 @@ import com.example.ebook.dto.LoginUserDTO;
 import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.dto.RegisterUserDTO;
 import com.example.ebook.dto.UpdateUserDTO;
+import com.example.ebook.dto.UserReturnDTO;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
@@ -14,11 +15,13 @@ import com.example.ebook.model.Book;
 import com.example.ebook.model.User;
 import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.FileService;
+import com.example.ebook.service.NotificationService;
 import com.example.ebook.service.UserService;
 import com.example.ebook.util.JwtUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,13 +43,14 @@ public class UserAPI {
 	
 	@Autowired
 	private UserService userService;
-	
+	@Autowired
+	private NotificationService notificationService;
 	@Autowired
 	private FileService fileService;
 	
 	//登录
 	@CrossOrigin
-	@ApiOperation(value = "登录", notes = "hello测试api")
+	@ApiOperation(value = "登录", notes = "用户登录")
 	@PostMapping("/login")
 	public Object login(@RequestBody LoginUserDTO user) {
 		JSONObject jsonObject = new JSONObject();
@@ -58,9 +62,12 @@ public class UserAPI {
 				throw new MyException(ResultCode.PASSWORD_ERROR);
 			} else {
 				String token = JwtUtil.getToken(userForBase);
-				System.out.println("token:" + token);
+				
+				UserReturnDTO userReturnDTO = new UserReturnDTO();
+				BeanUtils.copyProperties(userForBase,userReturnDTO);
+				userReturnDTO.setUnReadCount(notificationService.unReadCount(userForBase.getId()));
 				jsonObject.put("token", token);
-				jsonObject.put("user", userForBase);
+				jsonObject.put("user", userReturnDTO);
 			}
 			return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 		}
@@ -99,13 +106,21 @@ public class UserAPI {
 	@GetMapping("/refresh")
 	public Object refreshUser(HttpServletRequest request) {
 		JSONObject jsonObject = new JSONObject();
-		String oldToken = request.getHeader("token");
-		String id = JWT.decode(oldToken).getAudience().get(0);
-		Long userId = Long.parseLong(id);
+		Long userId = JwtUtil.getUserIdByToken(request);
 		User user = userService.findUserById(userId);
+		
+		if (user == null) {
+			throw new MyException(ResultCode.USER_NOT_FOUND);
+		}
+		
+		UserReturnDTO userReturnDTO = new UserReturnDTO();
+		BeanUtils.copyProperties(user,userReturnDTO);
+		userReturnDTO.setUnReadCount(notificationService.unReadCount(userId));
+		
 		String newToken = JwtUtil.getToken(user);
+		
 		jsonObject.put("token", newToken);
-		jsonObject.put("user", user);
+		jsonObject.put("user", userReturnDTO);
 		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 	}
 	
@@ -123,7 +138,6 @@ public class UserAPI {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
 		}
 		
-		System.out.println(updateUserDTO);
 		User existsUser = new User();
 		existsUser.setId(updateUserDTO.getId());
 		existsUser.setUserName(updateUserDTO.getUsername());
@@ -140,7 +154,10 @@ public class UserAPI {
 		}
 		userService.update(existsUser);
 		userById = userService.findUserById(updateUserDTO.getId());
-		jsonObject.put("user", userById);
+		UserReturnDTO userReturnDTO = new UserReturnDTO();
+		BeanUtils.copyProperties(userById,userReturnDTO);
+		userReturnDTO.setUnReadCount(notificationService.unReadCount(userById.getId()));
+		jsonObject.put("user", userReturnDTO);
 		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 	}
 	

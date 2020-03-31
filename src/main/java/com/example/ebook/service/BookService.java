@@ -87,6 +87,8 @@ public class BookService {
 		book.setBookUrl(bookUrls);
 		book.setBookStamps(upBookDTO.getStamps());
 		book.setBookSize(size);
+		book.setCommentCount(0);
+		book.setSaleCount(0);
 		book.setDate(System.currentTimeMillis());
 		book.setBio(upBookDTO.getBio());
 		

@@ -47,4 +47,14 @@
         from book
     where tags REGEXP #{regexpTag}
   </select>
+  <update id="incCommentCount" parameterType="com.example.ebook.model.Book">
+    update book
+      set comment_count = comment_count + #{commentCount,jdbcType=INTEGER}
+        where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="saleCountCount" parameterType="com.example.ebook.model.Book">
+    update book
+    set sale_count = sale_count + #{saleCount,jdbcType=INTEGER}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
 </mapper>

@@ -11,4 +11,18 @@ import java.util.List;
  */
 public interface BookExtMapper {
 	List<Book> selectRelated(String regexpTag);
+	
+	/**
+	 * 书籍评论 评论加一
+	 * @param book
+	 * @return
+	 */
+	int incCommentCount(Book book);
+	
+	/**
+	 * 书籍销量加一
+	 * @param book
+	 * @return
+	 */
+	int saleCountCount(Book book);
 }
