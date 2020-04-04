@@ -30,7 +30,8 @@ public enum ResultCode {
 	BOOK_ORDER_NOT_FOUND(false, 40014, "用户未购买此书"),
 	FILE_NOT_FOUND(false, 40015, "文件不存在"),
 	READ_NOTIFICATION_FAILED(false, 40016, "消息通知阅读失败"),
-	NOTIFICATION_NOT_FOUND(false, 40017, "消息通知不存在");
+	NOTIFICATION_NOT_FOUND(false, 40017, "消息通知不存在"),
+	POST_NOT_FOUND(false, 40018, "查看的讨论不存在");
 	//操作是否成功
 	boolean success;
 	//操作代码

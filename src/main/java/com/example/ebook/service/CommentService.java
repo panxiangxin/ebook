@@ -37,6 +37,10 @@ public class CommentService {
 	private UserMapper userMapper;
 	@Autowired
 	private NotificationMapper notificationMapper;
+	@Autowired
+	private PostMapper postMapper;
+	@Autowired
+	private PostExtMapper postExtMapper;
 	
 	@Transactional
 	public void insert(Comment comment) {
@@ -86,8 +90,48 @@ public class CommentService {
 			//创建通知
 			createNotify(comment, comment.getRecevierId(),NotificationEnum.REPLY_COMMENT,commentator.getUserName(),book.getBookName(),book.getId());
 		}
-	}
-	
+		//回复讨论 一级评论
+		if (comment.getType().equals(CommentTypeEnum.TOPIC.getType())) {
+			Post post = postMapper.selectByPrimaryKey(comment.getParentId());
+			if (post == null) {
+				throw new MyException(ResultCode.POST_NOT_FOUND);
+			}
+			User commentator = userMapper.selectByPrimaryKey(comment.getCommentator());
+			if (commentator == null) {
+				throw new MyException(ResultCode.USER_NOT_FOUND);
+			}
+			commentMapper.insertSelective(comment);
+			post.setCommentCount(1);
+			postExtMapper.incCommentCount(post);
+			
+			//创建通知
+			createNotify(comment, comment.getRecevierId(), NotificationEnum.REPLY_TOPIC, commentator.getUserName(), post.getTitle(), post.getId());
+		}
+		//回复讨论下面的一级或者二级评论
+		if (comment.getType().equals(CommentTypeEnum.TOPIC_COMMENT.getType())) {
+			Comment dbComment = commentMapper.selectByPrimaryKey(comment.getParentId());
+			if (dbComment == null) {
+				throw new MyException(ResultCode.COMMENT_NOT_FOUND);
+			}
+			User receiver = userMapper.selectByPrimaryKey(comment.getRecevierId());
+			if (receiver == null) {
+				throw new MyException(ResultCode.RECEIVER_NOT_FOUND);
+			}
+			User commentator = userMapper.selectByPrimaryKey(comment.getCommentator());
+			if (commentator == null) {
+				throw new MyException(ResultCode.USER_NOT_FOUND);
+			}
+				commentMapper.insertSelective(comment);
+				//增加评论数
+				Comment parentComment = new Comment();
+				Post post = postMapper.selectByPrimaryKey(comment.getCommentTopic());
+				parentComment.setId(comment.getParentId());
+				parentComment.setCommentCount(1);
+				commentExtMapper.incCommentCount(parentComment);
+				//创建通知
+				createNotify(comment, comment.getRecevierId(),NotificationEnum.REPLY_TOPIC_COMMENT,commentator.getUserName(),post.getTitle(),post.getId());
+			}
+		}
 	public List<CommentDTO> list(Integer type, Long id) {
 		//获取一级评论
 		CommentExample commentExample = new CommentExample();
@@ -121,17 +165,17 @@ public class CommentService {
 			CommentDTO commentDTO = new CommentDTO();
 			BeanUtils.copyProperties(comment, commentDTO);
 			commentDTO.setCommentUser(userMap.get(comment.getCommentator()));
-			commentDTO.setReply(getSecondComment(comment.getId()));
+			commentDTO.setReply(getSecondComment(comment.getId(),type + 1));
 			return commentDTO;
 		}).collect(Collectors.toList());
 		return commentDTOS;
 	}
 	
-	public List<CommentDTO> getSecondComment(Long id) {
+	public List<CommentDTO> getSecondComment(Long id, int type) {
 		
 		CommentExample commentExample = new CommentExample();
 		commentExample.createCriteria()
-				.andTypeEqualTo(CommentTypeEnum.COMMENT.getType())
+				.andTypeEqualTo(type)
 				.andParentIdEqualTo(id);
 		commentExample.setOrderByClause("gmt_create desc");
 		List<Comment> comments = commentMapper.selectByExampleWithBLOBs(commentExample);
@@ -183,7 +227,7 @@ public class CommentService {
 		
 		Map<Long, Comment> commentMap = comments.stream().collect(Collectors.toMap(Comment::getId, comment -> comment));
 		//获取被评论人id集合
-		List<Long> receiverId = comments.stream().map(Comment::getRecevierId).collect(Collectors.toList());
+		List<Long> receiverId = comments.stream().filter(comment -> !CommentTypeEnum.BOOK.getType().equals(comment.getType())).map(Comment::getRecevierId).collect(Collectors.toList());
 		//获取被评论人
 		UserExample userExample = new UserExample();
 		userExample.createCriteria()
@@ -194,11 +238,11 @@ public class CommentService {
 		//将评论分类
 		List<Comment> bookComments = comments.stream().filter(comment -> CommentTypeEnum.BOOK.getType().equals(comment.getType())).collect(Collectors.toList());
 		List<Comment> commentsComment = comments.stream().filter(comment -> CommentTypeEnum.COMMENT.getType().equals(comment.getType())).collect(Collectors.toList());
-		
+		List<Comment> topicComments = comments.stream().filter(comment -> CommentTypeEnum.TOPIC.getType().equals(comment.getType())).collect(Collectors.toList());
+		List<Comment> topicCommentComments = comments.stream().filter(comment -> CommentTypeEnum.TOPIC_COMMENT.getType().equals(comment.getType())).collect(Collectors.toList());
 		//首先处理书籍评论
 		//获取评论的书籍
-		
-		List<Long> booksId = comments.stream().map(Comment::getCommentTopic).collect(Collectors.toList());
+		List<Long> booksId = bookComments.stream().map(Comment::getCommentTopic).collect(Collectors.toList());
 		BookExample bookExample = new BookExample();
 		bookExample.createCriteria()
 				.andIdIn(booksId);
@@ -227,6 +271,34 @@ public class CommentService {
 			userCommentDTOS.addAll(commentDTOS);
 		}
 		
+		//获取评论主题
+		List<Long> postIds = topicComments.stream().map(Comment::getCommentTopic).collect(Collectors.toList());
+		PostExample postExample = new PostExample();
+		postExample.createCriteria()
+				.andIdIn(postIds);
+		List<Post> posts = postMapper.selectByExampleWithBLOBs(postExample);
+		Map<Long, Post> postMap = posts.stream().collect(Collectors.toMap(Post::getId, post -> post));
+		
+		if (topicComments.size() != 0) {
+			List<UserCommentDTO> postCommentDTO = topicComments.stream().map(comment -> {
+				UserCommentDTO userCommentDTO = new UserCommentDTO();
+				BeanUtils.copyProperties(comment, userCommentDTO);
+				userCommentDTO.setCommentPost(postMap.get(comment.getCommentTopic()));
+				return userCommentDTO;
+			}).collect(Collectors.toList());
+			userCommentDTOS.addAll(postCommentDTO);
+		}
+		if (topicCommentComments.size() != 0) {
+			List<UserCommentDTO> postCommentComments = topicCommentComments.stream().map(comment -> {
+				UserCommentDTO userCommentDTO = new UserCommentDTO();
+				BeanUtils.copyProperties(comment, userCommentDTO);
+				userCommentDTO.setCommentPost(postMap.get(comment.getCommentTopic()));
+				userCommentDTO.setComment(commentMap.get(comment.getParentId()));
+				userCommentDTO.setReceiver(receiverMap.get(comment.getRecevierId()));
+				return userCommentDTO;
+			}).collect(Collectors.toList());
+			userCommentDTOS.addAll(postCommentComments);
+		}
 		return userCommentDTOS;
 	}
 	

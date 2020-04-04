@@ -2,6 +2,7 @@ package com.example.ebook.dto;
 
 import com.example.ebook.model.Book;
 import com.example.ebook.model.Comment;
+import com.example.ebook.model.Post;
 import com.example.ebook.model.User;
 import lombok.Data;
 
@@ -34,4 +35,6 @@ public class UserCommentDTO {
 	private Comment comment;
 	//评论主题
 	private Book commentBook;
+	//评论post
+	private Post commentPost;
 }
