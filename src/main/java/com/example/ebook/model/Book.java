@@ -1,5 +1,8 @@
 package com.example.ebook.model;
 
+import lombok.ToString;
+
+@ToString
 public class Book {
     /**
      *

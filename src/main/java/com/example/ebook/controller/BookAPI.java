@@ -69,6 +69,7 @@ public class BookAPI {
 	}
 	
 	@Transactional
+	@UserLoginToken
 	@PostMapping("/upBook")
 	public Object upBook(HttpServletRequest request,
 						 @RequestParam(value = "bookFile") MultipartFile file,

@@ -7,15 +7,14 @@ import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.mapper.BookExtMapper;
 import com.example.ebook.mapper.BookMapper;
-import com.example.ebook.model.Book;
-import com.example.ebook.model.BookExample;
-import com.example.ebook.model.BookOrder;
-import com.example.ebook.model.User;
+import com.example.ebook.mapper.ChapterMapper;
+import com.example.ebook.model.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -37,6 +36,10 @@ public class BookService {
 	BookExtMapper bookExtMapper;
 	@Autowired
 	BookOrderService bookOrderService;
+	@Autowired
+	ChapterMapper chapterMapper;
+	@Autowired
+	CommentService commentService;
 	@Autowired
 	UserService userService;
 	@Autowired
@@ -96,6 +99,13 @@ public class BookService {
 		return book.getId();
 	}
 	
+	public Long insert(Book book) {
+		
+		bookMapper.insertSelective(book);
+		
+		return book.getId();
+	}
+	
 	public ReturnBookDTO findBookHasBought(String bookId, HttpServletRequest request) {
 		
 		Book book = getBookById(bookId);
@@ -107,10 +117,12 @@ public class BookService {
 			String id = JWT.decode(oldToken).getAudience().get(0);
 			Long userId = Long.parseLong(id);
 			List<BookOrder> bookOrder = bookOrderService.findOrderByUserIdAndBookId(userId, bookId);
+			
 			if (bookOrder.size() == 0) {
 				returnBookDTO.setHasBought(false);
+			} else {
+				returnBookDTO.setHasBought(true);
 			}
-			returnBookDTO.setHasBought(true);
 		} else {
 			returnBookDTO.setHasBought(false);
 		}
@@ -130,6 +142,56 @@ public class BookService {
 		List<BookOrder> orderByUserIdAndBookId = bookOrderService.findOrderByUserIdAndBookId(userById.getId(), bookId);
 		if (orderByUserIdAndBookId.size() == 0) {
 			throw new MyException(ResultCode.BOOK_ORDER_NOT_FOUND);
+		}
+		return fileService.downloadFile(book.getBookUrl());
+	}
+	
+	public List<Book> findBySearch(String search) {
+		BookExample bookExample = new BookExample();
+		BookExample.Criteria bookExampleCriteria = bookExample.createCriteria();
+		if (StringUtils.isNotBlank(search)) {
+			return bookExtMapper.selectByAuthorOrName(search);
+		} else {
+			bookExampleCriteria.andIdIsNotNull();
+		}
+		return bookMapper.selectByExampleWithBLOBs(bookExample);
+	}
+	
+	public Book findBookById(Long id) {
+		return bookMapper.selectByPrimaryKey(id);
+	}
+	
+	public void update(Book books) {
+		bookMapper.updateByPrimaryKey(books);
+	}
+	
+	@Transactional
+	public void deleteById(Long id) {
+		
+		//删除数据库相关章节
+		ChapterExample example = new ChapterExample();
+		chapterMapper.deleteByExample(example);
+		example.createCriteria()
+				.andBookIdEqualTo(id);
+		chapterMapper.deleteByExample(example);
+		//删除相关评论记录
+		//最后删除书籍
+		bookMapper.deleteByPrimaryKey(id);
+	}
+	
+	public void deleteBookBatchByIds(List<Long> ids) {
+		if (ids.size() != 0) {
+			ids.forEach(id -> {
+				bookMapper.deleteByPrimaryKey(id);
+			});
+		}
+	}
+	
+	public ResponseEntity<byte[]> downloadBookAdmin(String bookId) throws IOException {
+		
+		Book book = bookMapper.selectByPrimaryKey(Long.parseLong(bookId));
+		if (book == null) {
+			throw new MyException(ResultCode.BOOK_NOT_FOUND);
 		}
 		return fileService.downloadFile(book.getBookUrl());
 	}

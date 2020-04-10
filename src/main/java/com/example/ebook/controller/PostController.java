@@ -50,18 +50,9 @@ public class PostController {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
 		}
 		//对于post的相关判断
+		System.out.println(postUpDTO);
 		
-		Post post = new Post();
-		post.setTitle(postUpDTO.getTitle());
-		post.setGmtCreate(System.currentTimeMillis());
-		post.setGmtModified(System.currentTimeMillis());
-		post.setCreator(userIdByToken);
-		post.setCommentCount(0);
-		post.setLikeCount(0);
-		post.setViewCount(0);
-		post.setTag(postUpDTO.getTag());
-		post.setDescription(postUpDTO.getDescription());
-		postMapper.insertSelective(post);
+		postService.createOrUpdate(postUpDTO, userIdByToken);
 		
 		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
@@ -106,5 +97,14 @@ public class PostController {
 	public Object hotTagGet() {
 		List<HotTagDTO> hotTags = hotTagCache.getHotTags();
 		return new ResponseResult<>(ResultCode.CLICK_OK, hotTags);
+	}
+	
+	@UserLoginToken
+	@DeleteMapping("/{id}")
+	public Object deletePost(@PathVariable("id") Long id) {
+		
+		postService.delete(id);
+		
+		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 }

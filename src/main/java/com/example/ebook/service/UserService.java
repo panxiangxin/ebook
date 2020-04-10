@@ -7,6 +7,7 @@ import com.example.ebook.mapper.BookMapper;
 import com.example.ebook.mapper.BookOrderMapper;
 import com.example.ebook.mapper.UserMapper;
 import com.example.ebook.model.*;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -99,5 +100,39 @@ public class UserService {
 				.andIdIn(bookIds);
 		books = bookMapper.selectByExample(bookExample);
 		return books;
+	}
+	
+	public List<User> list(String search) {
+		UserExample userExample = new UserExample();
+		
+		UserExample.Criteria userExampleCriteria = userExample.createCriteria();
+		if (StringUtils.isNotBlank(search)) {
+			search = "%" + search + "%";
+			userExampleCriteria.andUserNameLike(search);
+		} else {
+			userExampleCriteria.andIdIsNotNull();
+		}
+		return userMapper.selectByExample(userExample);
+	}
+	
+	public void deleteUserById(Long id) {
+		
+		userMapper.deleteByPrimaryKey(id);
+	}
+	
+	public void deleteUserBatchByIds(List<Long> ids) {
+		
+		if (ids.size() != 0) {
+			ids.forEach(id -> {
+				userMapper.deleteByPrimaryKey(id);
+			});
+		}
+	}
+	
+	public void resetPassword(Long id) {
+		
+		User user = userMapper.selectByPrimaryKey(id);
+		user.setPassword("1234");
+		userMapper.updateByPrimaryKeySelective(user);
 	}
 }

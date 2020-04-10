@@ -1,6 +1,7 @@
 package com.example.ebook.service;
 
 import com.example.ebook.dto.PostDTO;
+import com.example.ebook.dto.PostUpDTO;
 import com.example.ebook.dto.QueryPostDTO;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
@@ -13,8 +14,8 @@ import com.example.ebook.model.User;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
@@ -107,5 +108,49 @@ public class PostService {
 		post.setId(id);
 		post.setViewCount(1);
 		postExtMapper.updateByPrimaryKeyInc(post);
+	}
+	
+	public void createOrUpdate(PostUpDTO postUpDTO, Long userIdByToken) {
+		
+		if (postUpDTO.getId() == null) {
+			//新增post
+			Post post = new Post();
+			post.setTitle(postUpDTO.getTitle());
+			post.setGmtCreate(System.currentTimeMillis());
+			post.setGmtModified(System.currentTimeMillis());
+			post.setCreator(userIdByToken);
+			post.setCommentCount(0);
+			post.setLikeCount(0);
+			post.setViewCount(0);
+			post.setTag(postUpDTO.getTag());
+			post.setDescription(postUpDTO.getDescription());
+			postMapper.insertSelective(post);
+		} else {
+			
+			Post oldPost = postMapper.selectByPrimaryKey(postUpDTO.getId());
+			if (oldPost == null) {
+				throw new MyException(ResultCode.POST_NOT_FOUND);
+			}
+			//修改post
+			Post post = new Post();
+			post.setId(postUpDTO.getId());
+			post.setTitle(postUpDTO.getTitle());
+			post.setDescription(postUpDTO.getDescription());
+			post.setTag(postUpDTO.getTag());
+			postMapper.updateByPrimaryKeySelective(post);
+		}
+	}
+	
+	@Transactional
+	public void delete(Long id) {
+		
+		Post post = postMapper.selectByPrimaryKey(id);
+		if (post == null) {
+			throw new MyException(ResultCode.POST_NOT_FOUND);
+		}
+		//删除帖子
+		postMapper.deleteByPrimaryKey(id);
+		//删除相关评论
+		
 	}
 }

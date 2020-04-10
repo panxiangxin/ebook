@@ -57,4 +57,15 @@
     set sale_count = sale_count + #{saleCount,jdbcType=INTEGER}
     where id = #{id,jdbcType=BIGINT}
   </update>
+    <select id="selectByAuthorOrName" parameterType="java.lang.String" resultMap="BaseResultMap">
+      select
+      <include refid="Base_Column_List"/>,
+      <include refid="Blob_Column_List"/>
+      from book
+      where id IS NOT NULL
+      <if test="search != null and !search.equals('')">
+         AND
+        CONCAT(book.author,book.book_name) LIKE CONCAT ('%', #{search},'%')
+      </if>
+    </select>
 </mapper>

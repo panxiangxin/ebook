@@ -1,6 +1,7 @@
 package com.example.ebook.mapper;
 
 import com.example.ebook.model.Book;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -25,4 +26,6 @@ public interface BookExtMapper {
 	 * @return
 	 */
 	int saleCountCount(Book book);
+	
+	List<Book> selectByAuthorOrName(@Param("search") String search);
 }

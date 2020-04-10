@@ -10,6 +10,7 @@ import lombok.Data;
 @Data
 public class PostUpDTO {
 	
+	private Long id;
 	private String title;
 	private String tag;
 	private String description;
