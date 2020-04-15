@@ -54,4 +54,9 @@
       set like_count = like_count + #{likeCount,jdbcType=INTEGER}
     where id = #{id,jdbcType=BIGINT}
   </update>
+  <update id="decCommentCount" parameterType="com.example.ebook.model.Comment">
+      update comment
+      set comment_count = comment_count - #{commentCount,jdbcType=INTEGER}
+      where id = #{id,jdbcType=BIGINT}
+  </update>
 </mapper>

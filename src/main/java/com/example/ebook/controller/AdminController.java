@@ -3,8 +3,7 @@ package com.example.ebook.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.example.ebook.annotation.UserLoginToken;
-import com.example.ebook.dto.AdminUserDTO;
-import com.example.ebook.dto.PostDTO;
+import com.example.ebook.dto.*;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
@@ -44,6 +43,12 @@ public class AdminController {
 	private FileService fileService;
 	@Autowired
 	private PostService postService;
+	@Autowired
+	private CommentService commentService;
+	@Autowired
+	private BookOrderService bookOrderService;
+	@Autowired
+	private StampOrderService stampOrderService;
 	
 	@UserLoginToken
 	@GetMapping("/user")
@@ -185,7 +190,7 @@ public class AdminController {
 	
 	@UserLoginToken
 	@PostMapping("/book/up")
-	public Object upBook(HttpServletRequest request,@RequestParam("file") MultipartFile file) {
+	public Object upBook(HttpServletRequest request, @RequestParam("file") MultipartFile file) {
 		
 		long size = file.getSize();
 		String bookUrls = fileService.upload(file, request, UpFileTypeEnum.EBOOK);
@@ -199,9 +204,83 @@ public class AdminController {
 	@UserLoginToken
 	@GetMapping("/post")
 	public Object getPost(@RequestParam(value = "search", required = false) String search,
-						  @RequestParam(value = "tag", required = false) String tag) {
+						  @RequestParam(value = "tag", required = false) String tag,
+						  @RequestParam(value = "sort",required = false) String sort) {
 		
-		List<PostDTO> postDTOS = postService.list(search, tag);
+		List<PostDTO> postDTOS = postService.list(search, tag, sort);
 		return new ResponseResult<>(ResultCode.CLICK_OK, postDTOS);
+	}
+	
+	@UserLoginToken
+	@PostMapping("/post/deletePostBatch")
+	public Object deletePostBatch(@RequestParam("postList[]") Long[] postIds) {
+		
+		
+		List<Long> ids = Arrays.asList(postIds);
+		postService.deletePostBatchByIds(ids);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	
+	@UserLoginToken
+	@GetMapping("/comment")
+	public Object comment() {
+		
+		List<UserCommentDTO> userCommentById = commentService.getUserCommentById(null, true);
+		return new ResponseResult<>(ResultCode.CLICK_OK, userCommentById);
+	}
+	
+	@UserLoginToken
+	@PostMapping("/comment/deleteCommentPost")
+	public Object deleteCommentPost(@RequestParam("commentList[]") Long[] commentIds) {
+		List<Long> ids = Arrays.asList(commentIds);
+		commentService.deleteCommentBatchByIds(ids);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@GetMapping("/bookOrder")
+	public Object bookOrders() {
+		
+		List<ReturnBookOrderDTO> returnBookOrderDTOS = bookOrderService.list();
+		return new ResponseResult<>(ResultCode.CLICK_OK, returnBookOrderDTOS);
+	}
+	
+	@UserLoginToken
+	@DeleteMapping("/bookOrder/{id}")
+	public Object deleteBookOrder(@PathVariable("id") String id) {
+		bookOrderService.delete(id);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@PostMapping("/bookOrder/deleteBookOrderBatch")
+	public Object deleteBookOrderBatch(@RequestParam("bookOrderList[]") String[] bookOrderList) {
+		
+		bookOrderService.deleteBookOrderBatch(bookOrderList);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@GetMapping("/investOrder")
+	public Object getInvestOrder() {
+		
+		List<ReturnStampsOrderDTO> list = stampOrderService.list();
+		return new ResponseResult<>(ResultCode.CLICK_OK, list);
+	}
+	
+	@UserLoginToken
+	@DeleteMapping("/investOrder/{id}")
+	public Object deleteInvestOrder(@PathVariable("id") String id) {
+		stampOrderService.delete(id);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@PostMapping("/investOrder/deleteInvestOrderPatch")
+	public Object deleteStampsOrderBatch(@RequestParam("stampsOrders[]") String[] stampsOrders) {
+		
+		stampOrderService.deleteBatch(stampsOrders);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 }

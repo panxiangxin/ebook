@@ -16,6 +16,8 @@ public interface CommentExtMapper {
 	 */
 	int incCommentCount(Comment comment);
 	
+	int decCommentCount(Comment comment);
+	
 	/**
 	 * 点赞加一操作
 	 * @param comment

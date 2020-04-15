@@ -8,7 +8,7 @@ import lombok.Data;
  * @Description
  */
 @Data
-public class ReturnBookDTO {
+public class ReturnBookDTO implements Comparable<ReturnBookDTO>{
 	private Long id;
 	
 	private String bookName;
@@ -23,9 +23,16 @@ public class ReturnBookDTO {
 	
 	private Long bookSize;
 	
+	private Integer saleCount;
+	
 	private Long date;
 	
 	private String bio;
 	
 	private Boolean hasBought;
+	
+	@Override
+	public int compareTo(ReturnBookDTO o) {
+		return saleCount - o.saleCount;
+	}
 }

@@ -89,10 +89,30 @@
       <if test="tag != null and tag != ''">
         and tag REGEXP #{tag,jdbcType=VARCHAR}
       </if>
+      <if test="sort != null and sort != '' and sort == 'no'">
+        and comment_count = 0
+      </if>
       <if test="time != null">
         and gmt_create > #{time,jdbcType=BIGINT}
       </if>
     </where>
-    order by gmt_create desc
+    <if test="sort == null or sort == ''">
+      order by gmt_create desc
+    </if>
+    <if test="sort != null and sort != '' and sort == 'new'">
+      order by gmt_create desc
+    </if>
+    <if test="sort != null and sort != '' and sort == 'no'">
+      order by gmt_create desc
+    </if>
+    <if test="sort != null and sort != '' and  (sort == 'hot' || sort == 'hot7' || sort == 'hot30')">
+      order by comment_count desc
+    </if>
   </select>
+  <update id="decCommentCount" parameterType="com.example.ebook.model.Post">
+    update post
+    set
+    comment_count = comment_count - #{commentCount,jdbcType=INTEGER}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
 </mapper>

@@ -31,6 +31,8 @@ public class UserCommentDTO {
 	private String content;
 	//接收人
 	private User receiver;
+	//发帖人
+	private User commentUser;
 	//一级评论
 	private Comment comment;
 	//评论主题

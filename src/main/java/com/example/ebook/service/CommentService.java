@@ -132,12 +132,19 @@ public class CommentService {
 				createNotify(comment, comment.getRecevierId(),NotificationEnum.REPLY_TOPIC_COMMENT,commentator.getUserName(),post.getTitle(),post.getId());
 			}
 		}
+		
 	public List<CommentDTO> list(Integer type, Long id) {
-		//获取一级评论
 		CommentExample commentExample = new CommentExample();
-		commentExample.createCriteria()
-				.andParentIdEqualTo(id)
-				.andTypeEqualTo(type);
+		
+		if (type == null && id == null) {
+			commentExample.createCriteria()
+					.andIdIsNotNull();
+		} else {
+			commentExample.createCriteria()
+					.andParentIdEqualTo(id)
+					.andTypeEqualTo(type);
+		}
+		//获取一级评论
 		commentExample.setOrderByClause("gmt_create desc");
 		List<Comment> comments = commentMapper.selectByExampleWithBLOBs(commentExample);
 		
@@ -165,7 +172,7 @@ public class CommentService {
 			CommentDTO commentDTO = new CommentDTO();
 			BeanUtils.copyProperties(comment, commentDTO);
 			commentDTO.setCommentUser(userMap.get(comment.getCommentator()));
-			commentDTO.setReply(getSecondComment(comment.getId(),type + 1));
+			commentDTO.setReply(getSecondComment(comment.getId(),comment.getType() + 1));
 			return commentDTO;
 		}).collect(Collectors.toList());
 		return commentDTOS;
@@ -207,23 +214,44 @@ public class CommentService {
 		}).collect(Collectors.toList());
 	}
 	
-	public List<UserCommentDTO> getUserCommentById(Long id) {
+	public List<UserCommentDTO> getUserCommentById(Long id, boolean isAdmin) {
 		
 		List<UserCommentDTO> userCommentDTOS = new ArrayList<>();
 		//包括评论内容 评论主题或者评论 评论对象
+		CommentExample commentExample = new CommentExample();
 		User user = userMapper.selectByPrimaryKey(id);
-		if (user == null) {
+		if (user == null && !isAdmin) {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
 		}
+		//获得全部评论
+		if (isAdmin) {
+			commentExample.createCriteria()
+					.andIdIsNotNull();
+		} else {
+			commentExample.createCriteria()
+					.andCommentatorEqualTo(id);
+		}
+		
 		//获取用户所有评论
-		CommentExample commentExample = new CommentExample();
-		commentExample.createCriteria()
-				.andCommentatorEqualTo(id);
 		List<Comment> comments = commentMapper.selectByExampleWithBLOBs(commentExample);
 		
 		if (comments.size() == 0) {
 			return new ArrayList<>();
 		}
+		List<Long> userIds = new ArrayList<>();
+		Set<Long> uniqueValues = new HashSet<>();
+		for (Comment comment : comments) {
+			Long commentator = comment.getCommentator();
+			if (uniqueValues.add(commentator)) {
+				userIds.add(commentator);
+			}
+		}
+		//获取一级评论人以及转换成map
+		UserExample commentUserExample = new UserExample();
+		commentUserExample.createCriteria()
+				.andIdIn(userIds);
+		List<User> users = userMapper.selectByExample(commentUserExample);
+		Map<Long, User> commentUserMap = users.stream().collect(Collectors.toMap(User::getId, commentUser -> commentUser));
 		
 		Map<Long, Comment> commentMap = comments.stream().collect(Collectors.toMap(Comment::getId, comment -> comment));
 		//获取被评论人id集合
@@ -234,7 +262,7 @@ public class CommentService {
 				.andIdIn(receiverId);
 		List<User> receivers = userMapper.selectByExample(userExample);
 		//转换为map对象
-		Map<Long, User> receiverMap = receivers.stream().collect(Collectors.toMap(User::getId, users -> users));
+		Map<Long, User> receiverMap = receivers.stream().collect(Collectors.toMap(User::getId, receiver -> receiver));
 		//将评论分类
 		List<Comment> bookComments = comments.stream().filter(comment -> CommentTypeEnum.BOOK.getType().equals(comment.getType())).collect(Collectors.toList());
 		List<Comment> commentsComment = comments.stream().filter(comment -> CommentTypeEnum.COMMENT.getType().equals(comment.getType())).collect(Collectors.toList());
@@ -253,6 +281,7 @@ public class CommentService {
 			List<UserCommentDTO> bookCommentsDTO = bookComments.stream().map(comment -> {
 				UserCommentDTO userCommentDTO = new UserCommentDTO();
 				BeanUtils.copyProperties(comment, userCommentDTO);
+				userCommentDTO.setCommentUser(commentUserMap.get(comment.getCommentator()));
 				userCommentDTO.setCommentBook(bookMap.get(comment.getCommentTopic()));
 				return userCommentDTO;
 			}).collect(Collectors.toList());
@@ -264,6 +293,7 @@ public class CommentService {
 				UserCommentDTO userCommentDTO = new UserCommentDTO();
 				BeanUtils.copyProperties(comment, userCommentDTO);
 				userCommentDTO.setCommentBook(bookMap.get(comment.getCommentTopic()));
+				userCommentDTO.setCommentUser(commentUserMap.get(comment.getCommentator()));
 				userCommentDTO.setComment(commentMap.get(comment.getParentId()));
 				userCommentDTO.setReceiver(receiverMap.get(comment.getRecevierId()));
 				return userCommentDTO;
@@ -283,6 +313,7 @@ public class CommentService {
 			List<UserCommentDTO> postCommentDTO = topicComments.stream().map(comment -> {
 				UserCommentDTO userCommentDTO = new UserCommentDTO();
 				BeanUtils.copyProperties(comment, userCommentDTO);
+				userCommentDTO.setCommentUser(commentUserMap.get(comment.getCommentator()));
 				userCommentDTO.setCommentPost(postMap.get(comment.getCommentTopic()));
 				return userCommentDTO;
 			}).collect(Collectors.toList());
@@ -295,6 +326,7 @@ public class CommentService {
 				userCommentDTO.setCommentPost(postMap.get(comment.getCommentTopic()));
 				userCommentDTO.setComment(commentMap.get(comment.getParentId()));
 				userCommentDTO.setReceiver(receiverMap.get(comment.getRecevierId()));
+				userCommentDTO.setCommentUser(commentUserMap.get(comment.getCommentator()));
 				return userCommentDTO;
 			}).collect(Collectors.toList());
 			userCommentDTOS.addAll(postCommentComments);
@@ -319,4 +351,52 @@ public class CommentService {
 		notificationMapper.insert(notification);
 	}
 	
+	@Transactional
+	public void delete(Long id) {
+		
+		Comment comment = commentMapper.selectByPrimaryKey(id);
+		if (comment == null) {
+			return;
+		}
+		
+		//如果是二级评论 直接删除
+		if (comment.getType().equals(CommentTypeEnum.COMMENT.getType())
+					|| comment.getType().equals(CommentTypeEnum.TOPIC_COMMENT.getType())) {
+			
+			Comment parentComment = commentMapper.selectByPrimaryKey(comment.getParentId());
+			if (parentComment != null) {
+				//父评论数目减一
+				parentComment.setCommentCount(1);
+				commentExtMapper.decCommentCount(parentComment);
+			}
+			//主题评论减一
+			//删除该评论
+			commentMapper.deleteByPrimaryKey(id);
+		}
+		//如果是一级评论 删除下面的二级评论
+		else if (comment.getType().equals(CommentTypeEnum.BOOK.getType())
+						 || comment.getType().equals(CommentTypeEnum.TOPIC.getType())) {
+			//首先删除一级目录下的二级评论
+			CommentExample example = new CommentExample();
+			example.createCriteria()
+					.andParentIdEqualTo(id);
+			commentMapper.deleteByExample(example);
+			
+			if (comment.getType().equals(CommentTypeEnum.TOPIC.getType())) {
+				//主题帖评论减一
+				Post post = postMapper.selectByPrimaryKey(comment.getCommentTopic());
+				if (post != null) {
+					post.setCommentCount(1);
+					postExtMapper.decCommentCount(post);
+				}
+			}
+			//删除该评论
+			commentMapper.deleteByPrimaryKey(id);
+		}
+	}
+	
+	public void deleteCommentBatchByIds(List<Long> ids) {
+		
+		ids.forEach(this::delete);
+	}
 }

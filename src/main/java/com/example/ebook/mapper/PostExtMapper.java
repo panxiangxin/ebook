@@ -21,4 +21,6 @@ public interface PostExtMapper {
 	int updateByPrimaryKeyInc(Post post);
 	
 	int incCommentCount(Post post);
+	
+	int decCommentCount(Post post);
 }

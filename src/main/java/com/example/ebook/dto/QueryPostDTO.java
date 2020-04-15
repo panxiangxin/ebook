@@ -11,6 +11,7 @@ import lombok.Data;
 public class QueryPostDTO {
 	
 	private String search;
+	private String sort;
 	private String tag;
 	private Long time;
 	

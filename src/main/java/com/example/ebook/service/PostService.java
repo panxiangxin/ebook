@@ -3,6 +3,7 @@ package com.example.ebook.service;
 import com.example.ebook.dto.PostDTO;
 import com.example.ebook.dto.PostUpDTO;
 import com.example.ebook.dto.QueryPostDTO;
+import com.example.ebook.enums.SortEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.mapper.PostExtMapper;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -55,7 +57,7 @@ public class PostService {
 		return postDTOS;
 	}
 	
-	public List<PostDTO> list(String search, String tag) {
+	public List<PostDTO> list(String search, String tag,String sort) {
 		if (StringUtils.isNotBlank(search)) {
 			String[] tags = StringUtils.split(search, " ");
 			search = Arrays
@@ -72,6 +74,18 @@ public class PostService {
 		if (StringUtils.isNotBlank(tag)) {
 			tag = tag.replace("+", "").replace("*", "").replace("?", "");
 			queryPostDTO.setTag(tag);
+		}
+		for (SortEnum sortEnum : SortEnum.values()) {
+			if (sortEnum.name().toLowerCase().equals(sort)) {
+				queryPostDTO.setSort(sort);
+				if (sortEnum == SortEnum.HOT7) {
+					queryPostDTO.setTime(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 7);
+				}
+				if (sortEnum == SortEnum.HOT30) {
+					queryPostDTO.setTime(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30);
+				}
+				break;
+			}
 		}
 		
 		List<Post> posts = postExtMapper.selectBySearchAndTag(queryPostDTO);
@@ -152,5 +166,10 @@ public class PostService {
 		postMapper.deleteByPrimaryKey(id);
 		//删除相关评论
 		
+	}
+	
+	public void deletePostBatchByIds(List<Long> ids) {
+		
+		ids.forEach(this::delete);
 	}
 }

@@ -15,7 +15,7 @@ public class AdminUserDTO {
 	private String sex;
 	private String bio;
 	private Integer qq;
-	private int age;
+	private Integer age;
 	private String mail;
 	private String imageUrl;
 	private Double stamps;

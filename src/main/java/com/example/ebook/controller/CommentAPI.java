@@ -31,9 +31,9 @@ public class CommentAPI {
 	public Object post(@RequestBody CommentCreateDTO commentCreateDTO) {
 		
 		if (commentCreateDTO.getContent() == null || StringUtils.isBlank(commentCreateDTO.getContent())) {
-		return new ResponseResult<>(ResultCode.CONTENT_EMPTY);
+			return new ResponseResult<>(ResultCode.CONTENT_EMPTY);
 		}
-		Comment comment =new Comment();
+		Comment comment = new Comment();
 		comment.setParentId(commentCreateDTO.getParentId());
 		comment.setType(commentCreateDTO.getType());
 		comment.setCommentTopic(commentCreateDTO.getCommentTopic());
@@ -50,14 +50,22 @@ public class CommentAPI {
 	}
 	
 	@GetMapping("/comment/{type}-{id}")
-	public Object comment(@PathVariable("type") Integer type,@PathVariable("id") Long id) {
+	public Object comment(@PathVariable("type") Integer type, @PathVariable("id") Long id) {
 		List<CommentDTO> list = commentService.list(type, id);
 		return new ResponseResult<>(ResultCode.CLICK_OK, list);
 	}
 	
 	@GetMapping("/user/{id}")
 	public Object getUserComment(@PathVariable("id") Long id) {
-		List<UserCommentDTO> userCommentById = commentService.getUserCommentById(id);
+		List<UserCommentDTO> userCommentById = commentService.getUserCommentById(id, false);
 		return new ResponseResult<>(ResultCode.CLICK_OK, userCommentById);
+	}
+	
+	@UserLoginToken
+	@DeleteMapping("/{id}")
+	public Object deleteComment(@PathVariable("id") Long id) {
+		
+		commentService.delete(id);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 }

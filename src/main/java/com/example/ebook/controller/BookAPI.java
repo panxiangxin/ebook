@@ -3,6 +3,7 @@ package com.example.ebook.controller;
 import com.alibaba.fastjson.JSON;
 import com.auth0.jwt.JWT;
 import com.example.ebook.annotation.UserLoginToken;
+import com.example.ebook.cache.HotBookCache;
 import com.example.ebook.dto.ReturnBookDTO;
 import com.example.ebook.dto.UpBookDTO;
 import com.example.ebook.enums.InvestChannelEnum;
@@ -52,6 +53,8 @@ public class BookAPI {
 	private ChapterService chapterService;
 	@Autowired
 	private BookOrderService bookOrderService;
+	@Autowired
+	private HotBookCache hotBookCache;
 	
 	@GetMapping("/books")
 	public Object books(String tags) {
@@ -114,8 +117,15 @@ public class BookAPI {
 	
 	@UserLoginToken
 	@GetMapping("/download")
-	public Object download(@RequestParam("userId") String userId, @RequestParam("bookId") String bookId ) throws IOException {
+	public Object download(@RequestParam("userId") String userId, @RequestParam("bookId") String bookId) throws IOException {
 		return bookService.downloadBook(userId, bookId);
 		
+	}
+	
+	@GetMapping("/hotBook")
+	public Object hotBooks() {
+		
+		List<ReturnBookDTO> hotBooks = hotBookCache.getHotBooks();
+		return new ResponseResult<>(ResultCode.CLICK_OK, hotBooks);
 	}
 }

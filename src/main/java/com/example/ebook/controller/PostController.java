@@ -33,8 +33,6 @@ import java.util.List;
 public class PostController {
 	
 	@Autowired
-	private PostMapper postMapper;
-	@Autowired
 	private UserService userService;
 	@Autowired
 	private PostService postService;
@@ -59,9 +57,10 @@ public class PostController {
 	
 	@GetMapping("/postList")
 	public Object postList(@RequestParam(value = "search", required = false) String search,
-						   @RequestParam(value = "tag", required = false) String tag) {
+						   @RequestParam(value = "tag", required = false) String tag,
+						   @RequestParam(value = "sort", required = false) String sort) {
 		
-		List<PostDTO> postDTOS = postService.list(search, tag);
+		List<PostDTO> postDTOS = postService.list(search, tag, sort);
 		return new ResponseResult<>(ResultCode.CLICK_OK, postDTOS);
 	}
 	
@@ -102,9 +101,19 @@ public class PostController {
 	@UserLoginToken
 	@DeleteMapping("/{id}")
 	public Object deletePost(@PathVariable("id") Long id) {
-		
 		postService.delete(id);
-		
 		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@GetMapping("/hotPost")
+	public Object hotPost() {
+		List<PostDTO> hotPosts = postService.list(null, null, "hot");
+		List<PostDTO> postDTOS;
+		if (hotPosts.size() >= 5) {
+			postDTOS = hotPosts.subList(0, 5);
+		} else {
+			postDTOS = hotPosts;
+		}
+		return new ResponseResult<>(ResultCode.CLICK_OK, postDTOS);
 	}
 }

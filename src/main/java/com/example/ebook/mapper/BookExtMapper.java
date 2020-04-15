@@ -25,7 +25,7 @@ public interface BookExtMapper {
 	 * @param book
 	 * @return
 	 */
-	int saleCountCount(Book book);
+	int incSaleCountCount(Book book);
 	
 	List<Book> selectByAuthorOrName(@Param("search") String search);
 }

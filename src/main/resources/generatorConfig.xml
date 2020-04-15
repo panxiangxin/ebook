@@ -6,6 +6,7 @@
 <generatorConfiguration>
 
     <context id="DB2Tables" targetRuntime="MyBatis3">
+        <!--这个是分页插件-->
         <plugin type="org.mybatis.generator.plugins.RowBoundsPlugin"></plugin>
 
         <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
