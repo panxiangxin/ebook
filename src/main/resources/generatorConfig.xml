@@ -7,7 +7,7 @@
 
     <context id="DB2Tables" targetRuntime="MyBatis3">
         <!--这个是分页插件-->
-        <plugin type="org.mybatis.generator.plugins.RowBoundsPlugin"></plugin>
+        <plugin type="org.mybatis.generator.plugins.RowBoundsPlugin"/>
 
         <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
                         connectionURL="jdbc:mysql://120.77.168.102:3306/ebook?useUnicode=true&amp;characterEncoding=utf8&amp;characterSetResults=utf8&amp;useSSL=false"

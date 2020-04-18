@@ -7,25 +7,37 @@ package com.example.ebook.enums;
  */
 public enum RoleTypeEnum {
 	/*
-	1.评论了书籍
-	2.评论了书籍评论
-	3.评论了主题
-	4.评论了主题评论
+	0 普通用户
+	1 管理员
 	 */
-	ROLE_ADMIN(1),ROLE_USER(2);
+	ROLE_ADMIN(1, "admin"),ROLE_USER(0, "user");
 	private final Integer type;
-	RoleTypeEnum(Integer type){
-		this.type = type;}
+	private final String message;
+	RoleTypeEnum(Integer type, String message){
+		this.type = type;
+		this.message = message;
+	}
 	public static boolean isExist(Integer type) {
-		for (CommentTypeEnum value : CommentTypeEnum.values()) {
+		for (RoleTypeEnum value : RoleTypeEnum.values()) {
 			if(value.getType().equals(type)){
 				return true;
 			}
 		}
 		return false;
 	}
-	
+	public static String getMessageByType(Integer type) {
+		for (RoleTypeEnum value: RoleTypeEnum.values()){
+			if (value.getType().equals(type)) {
+				return value.getMessage();
+			}
+		}
+		return null;
+	}
 	public Integer getType() {
 		return type;
+	}
+	
+	public String getMessage() {
+		return message;
 	}
 }

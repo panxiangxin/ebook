@@ -15,6 +15,14 @@ public class HotTagDTO implements Comparable<HotTagDTO> {
 		
 	@Override
 	public int compareTo(HotTagDTO o) {
-		return (postCount *5 +commentCount) - (o.postCount *5 + o.commentCount);
+		if (o.commentCount != null && commentCount != null) {
+			return (postCount *5 +commentCount) - (o.postCount *5 + o.commentCount);
+		}
+		else if (o.commentCount == null && commentCount == null) {
+			return postCount - o.postCount;
+		}
+		else {
+			return commentCount - o.commentCount;
+		}
 	}
 }

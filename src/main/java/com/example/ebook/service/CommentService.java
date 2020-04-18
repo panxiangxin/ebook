@@ -271,10 +271,13 @@ public class CommentService {
 		//首先处理书籍评论
 		//获取评论的书籍
 		List<Long> booksId = bookComments.stream().map(Comment::getCommentTopic).collect(Collectors.toList());
-		BookExample bookExample = new BookExample();
-		bookExample.createCriteria()
-				.andIdIn(booksId);
-		List<Book> books = bookMapper.selectByExampleWithBLOBs(bookExample);
+		List<Book> books = new ArrayList<>();
+		if (booksId.size() != 0) {
+			BookExample bookExample = new BookExample();
+			bookExample.createCriteria()
+					.andIdIn(booksId);
+			 books = bookMapper.selectByExampleWithBLOBs(bookExample);
+		}
 		Map<Long, Book> bookMap = books.stream().collect(Collectors.toMap(Book::getId, book -> book));
 		
 		if(bookComments.size() != 0) {
@@ -303,10 +306,14 @@ public class CommentService {
 		
 		//获取评论主题
 		List<Long> postIds = topicComments.stream().map(Comment::getCommentTopic).collect(Collectors.toList());
-		PostExample postExample = new PostExample();
-		postExample.createCriteria()
-				.andIdIn(postIds);
-		List<Post> posts = postMapper.selectByExampleWithBLOBs(postExample);
+		
+		List<Post> posts = new ArrayList<>();
+		if (postIds.size() != 0) {
+			PostExample postExample = new PostExample();
+			postExample.createCriteria()
+					.andIdIn(postIds);
+			posts = postMapper.selectByExampleWithBLOBs(postExample);
+		}
 		Map<Long, Post> postMap = posts.stream().collect(Collectors.toMap(Post::getId, post -> post));
 		
 		if (topicComments.size() != 0) {

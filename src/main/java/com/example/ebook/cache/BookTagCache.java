@@ -1,11 +1,13 @@
 package com.example.ebook.cache;
 
+import com.example.ebook.dto.HotTagDTO;
+import com.example.ebook.dto.ReturnBookDTO;
 import com.example.ebook.dto.TagDTO;
+import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -13,7 +15,34 @@ import java.util.stream.Collectors;
  * Date 2020/3/10 14:44
  * @Description
  */
+@Data
+@Component
 public class BookTagCache {
+	
+	private List<HotTagDTO> hotBookTags = new ArrayList<>();
+	
+	public void updateTags(Map<String, HotTagDTO> priorities) {
+		
+		int max = 5;
+		PriorityQueue<HotTagDTO> priorityQueue = new PriorityQueue<>(max);
+		priorities.forEach((name, priority) -> {
+			if(priorityQueue.size() < max){
+				priorityQueue.add(priority);
+			}else {
+				HotTagDTO minBookTag = priorityQueue.peek();
+				if (priority.compareTo(minBookTag) > 0) {
+					priorityQueue.poll();
+					priorityQueue.add(priority);
+				}
+			}
+		});
+		List<HotTagDTO> list = new ArrayList<>();
+		while (priorityQueue.size() != 0) {
+			HotTagDTO hotTagDTO = priorityQueue.poll();
+			list.add(0,hotTagDTO);
+		}
+		hotBookTags = list;
+	}
 	
 	public static ArrayList<TagDTO> get() {
 		
@@ -43,6 +72,19 @@ public class BookTagCache {
 		other.setTags(Arrays.asList("图书讨论","推书","书荒"));
 		tagDTOS.add(other);
 		return tagDTOS;
+	}
+	
+	public static ArrayList<String> getBookCategory() {
+		ArrayList<String> tags = new ArrayList<>();
+		tags.add("都市");
+		tags.add("玄幻");
+		tags.add("科技");
+		tags.add("社会");
+		tags.add("生活");
+		tags.add("经管");
+		tags.add("文化");
+		tags.add("流行");
+		return tags;
 	}
 	
 	public static String filterInvalid(String tags) {

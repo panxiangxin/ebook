@@ -5,8 +5,10 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.example.ebook.annotation.AdminUser;
 import com.example.ebook.annotation.PassToken;
 import com.example.ebook.annotation.UserLoginToken;
+import com.example.ebook.enums.RoleTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.mapper.UserMapper;
@@ -76,6 +78,17 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 					jwtVerifier.verify(token);
 				} catch (JWTVerificationException e) {
 					throw new MyException(ResultCode.TOKEN_INVALID);
+				}
+				//验证用户权限
+				if (method.isAnnotationPresent(AdminUser.class)) {
+					AdminUser adminUser = method.getAnnotation(AdminUser.class);
+					if (adminUser.required()) {
+						if (user.getStatus().equals(RoleTypeEnum.ROLE_ADMIN.getType())) {
+							return true;
+						} else {
+							throw new MyException(ResultCode.USER_NO_AUTH);
+						}
+					}
 				}
 				return true;
 			}

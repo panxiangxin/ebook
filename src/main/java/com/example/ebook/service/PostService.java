@@ -18,9 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -171,5 +171,29 @@ public class PostService {
 	public void deletePostBatchByIds(List<Long> ids) {
 		
 		ids.forEach(this::delete);
+	}
+	
+	public List<PostDTO> selectRelated(PostDTO postDTO) {
+		if (StringUtils.isBlank(postDTO.getTag())) {
+			return new ArrayList<>();
+		}
+		String[] tags = StringUtils.split(postDTO.getTag(), ',');
+		String regexpTag = Arrays
+								   .stream(tags)
+								   .filter(StringUtils::isNotBlank)
+								   .map(t -> t.replace("+", "").replace("*", "").replace("?", ""))
+								   .filter(StringUtils::isNotBlank)
+								   .collect(Collectors.joining("|"));
+		
+		Post post = new Post();
+		post.setId(postDTO.getId());
+		post.setTag(regexpTag);
+		List<Post> questions = postExtMapper.selectRelated(post);
+		List<PostDTO> questionDTOS = questions.stream().map(q -> {
+			PostDTO questionDTO = new PostDTO();
+			BeanUtils.copyProperties(q,questionDTO);
+			return questionDTO;
+		}).collect(Collectors.toList());
+		return questionDTOS;
 	}
 }

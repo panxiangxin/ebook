@@ -8,6 +8,7 @@ import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.dto.RegisterUserDTO;
 import com.example.ebook.dto.UpdateUserDTO;
 import com.example.ebook.dto.UserReturnDTO;
+import com.example.ebook.enums.RoleTypeEnum;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
@@ -64,7 +65,7 @@ public class UserAPI {
 				String token = JwtUtil.getToken(userForBase);
 				
 				UserReturnDTO userReturnDTO = new UserReturnDTO();
-				BeanUtils.copyProperties(userForBase,userReturnDTO);
+				BeanUtils.copyProperties(userForBase, userReturnDTO);
 				userReturnDTO.setUnReadCount(notificationService.unReadCount(userForBase.getId()));
 				jsonObject.put("token", token);
 				jsonObject.put("user", userReturnDTO);
@@ -93,6 +94,7 @@ public class UserAPI {
 		existsUser.setAge(registerUserDTO.getAge());
 		existsUser.setStamps((double) 20);
 		existsUser.setMail(registerUserDTO.getEmail());
+		existsUser.setStatus(RoleTypeEnum.ROLE_USER.getType());
 		existsUser.setGmtModified(System.currentTimeMillis());
 		existsUser.setGmtCreate(System.currentTimeMillis());
 		existsUser.setAvatarUrl(avatarUrl);
@@ -114,7 +116,7 @@ public class UserAPI {
 		}
 		
 		UserReturnDTO userReturnDTO = new UserReturnDTO();
-		BeanUtils.copyProperties(user,userReturnDTO);
+		BeanUtils.copyProperties(user, userReturnDTO);
 		userReturnDTO.setUnReadCount(notificationService.unReadCount(userId));
 		
 		String newToken = JwtUtil.getToken(user);
@@ -127,7 +129,7 @@ public class UserAPI {
 	@UserLoginToken
 	@PostMapping("/update")
 	public Object updateUser(HttpServletRequest request,
-							 @RequestParam(value = "img",required = false) MultipartFile file,
+							 @RequestParam(value = "img", required = false) MultipartFile file,
 							 @RequestParam(value = "user") String user) {
 		
 		JSONObject jsonObject = new JSONObject();
@@ -155,7 +157,7 @@ public class UserAPI {
 		userService.update(existsUser);
 		userById = userService.findUserById(updateUserDTO.getId());
 		UserReturnDTO userReturnDTO = new UserReturnDTO();
-		BeanUtils.copyProperties(userById,userReturnDTO);
+		BeanUtils.copyProperties(userById, userReturnDTO);
 		userReturnDTO.setUnReadCount(notificationService.unReadCount(userById.getId()));
 		jsonObject.put("user", userReturnDTO);
 		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
@@ -167,5 +169,17 @@ public class UserAPI {
 		
 		List<Book> userBook = userService.getUserBook(id);
 		return new ResponseResult<>(ResultCode.CLICK_OK, userBook);
+	}
+	
+	@UserLoginToken
+	@GetMapping("/userRole")
+	public Object userRoles(HttpServletRequest request) {
+		Long userIdByToken = JwtUtil.getUserIdByToken(request);
+		User userById = userService.findUserById(userIdByToken);
+		if (userById == null) {
+			throw new MyException(ResultCode.USER_NOT_FOUND);
+		}
+		String role = RoleTypeEnum.getMessageByType(userById.getStatus());
+		return new ResponseResult<>(ResultCode.CLICK_OK, role);
 	}
 }

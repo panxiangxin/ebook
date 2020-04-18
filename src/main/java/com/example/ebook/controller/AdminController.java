@@ -2,6 +2,7 @@ package com.example.ebook.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.example.ebook.annotation.AdminUser;
 import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.dto.*;
 import com.example.ebook.enums.UpFileTypeEnum;
@@ -49,8 +50,11 @@ public class AdminController {
 	private BookOrderService bookOrderService;
 	@Autowired
 	private StampOrderService stampOrderService;
+	@Autowired
+	private AnnounceService announceService;
 	
 	@UserLoginToken
+	@AdminUser
 	@GetMapping("/user")
 	public Object userList(@RequestParam(value = "search", required = false) String search) {
 		
@@ -59,6 +63,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PutMapping("/user")
 	public Object updateUser(@RequestBody AdminUserDTO adminUserDTO) {
 		
@@ -84,6 +89,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@DeleteMapping("/user/{id}")
 	public Object deleteUser(@PathVariable("id") Long id) {
 		
@@ -97,6 +103,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/user/deleteUserBatch")
 	public Object deleteUserBatch(@RequestParam(value = "userList[]") Long[] userIds) {
 		
@@ -106,6 +113,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PutMapping("/user/password")
 	public Object resetPassword(@RequestParam(value = "id") Long id) {
 		
@@ -118,6 +126,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@GetMapping("/book")
 	public Object bookList(@RequestParam(value = "search", required = false) String search) {
 		List<Book> books = bookService.findBySearch(search);
@@ -126,6 +135,7 @@ public class AdminController {
 	
 	@Transactional
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/book")
 	public Object updateBook(HttpServletRequest request,
 							 @RequestParam("book") String book,
@@ -159,6 +169,8 @@ public class AdminController {
 		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 	
+	@UserLoginToken
+	@AdminUser
 	@DeleteMapping("/book/{id}")
 	public Object deleteBook(@PathVariable("id") Long id) {
 		System.out.println(id);
@@ -173,6 +185,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/book/deleteBookBatch")
 	public Object deleteBookBatch(@RequestParam(value = "bookList[]") Long[] bookIds) {
 		
@@ -182,6 +195,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@GetMapping("/book/download")
 	public Object downloadBook(@RequestParam("bookId") String bookId) throws IOException {
 		System.out.println(bookId);
@@ -189,6 +203,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/book/up")
 	public Object upBook(HttpServletRequest request, @RequestParam("file") MultipartFile file) {
 		
@@ -202,16 +217,18 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@GetMapping("/post")
 	public Object getPost(@RequestParam(value = "search", required = false) String search,
 						  @RequestParam(value = "tag", required = false) String tag,
-						  @RequestParam(value = "sort",required = false) String sort) {
+						  @RequestParam(value = "sort", required = false) String sort) {
 		
 		List<PostDTO> postDTOS = postService.list(search, tag, sort);
 		return new ResponseResult<>(ResultCode.CLICK_OK, postDTOS);
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/post/deletePostBatch")
 	public Object deletePostBatch(@RequestParam("postList[]") Long[] postIds) {
 		
@@ -223,6 +240,7 @@ public class AdminController {
 	
 	
 	@UserLoginToken
+	@AdminUser
 	@GetMapping("/comment")
 	public Object comment() {
 		
@@ -231,6 +249,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/comment/deleteCommentPost")
 	public Object deleteCommentPost(@RequestParam("commentList[]") Long[] commentIds) {
 		List<Long> ids = Arrays.asList(commentIds);
@@ -239,6 +258,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@GetMapping("/bookOrder")
 	public Object bookOrders() {
 		
@@ -247,6 +267,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@DeleteMapping("/bookOrder/{id}")
 	public Object deleteBookOrder(@PathVariable("id") String id) {
 		bookOrderService.delete(id);
@@ -254,6 +275,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/bookOrder/deleteBookOrderBatch")
 	public Object deleteBookOrderBatch(@RequestParam("bookOrderList[]") String[] bookOrderList) {
 		
@@ -262,6 +284,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@GetMapping("/investOrder")
 	public Object getInvestOrder() {
 		
@@ -270,6 +293,7 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@DeleteMapping("/investOrder/{id}")
 	public Object deleteInvestOrder(@PathVariable("id") String id) {
 		stampOrderService.delete(id);
@@ -277,10 +301,35 @@ public class AdminController {
 	}
 	
 	@UserLoginToken
+	@AdminUser
 	@PostMapping("/investOrder/deleteInvestOrderPatch")
 	public Object deleteStampsOrderBatch(@RequestParam("stampsOrders[]") String[] stampsOrders) {
 		
 		stampOrderService.deleteBatch(stampsOrders);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@AdminUser
+	@PostMapping("/announce")
+	public Object PostAnnounce(@RequestBody AnnouncementDTO announcementDTO) {
+		announceService.saveOrUpdate(announcementDTO);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@AdminUser
+	@DeleteMapping("/announce/{id}")
+	public Object deleteAnnounce(@PathVariable("id") Long id) {
+		announceService.delete(id);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@AdminUser
+	@PostMapping("/announce/deleteBatch")
+	public Object deleteAnnounceBatch(@RequestParam("announceList[]") Long[] announceList) {
+		announceService.deleteBatch(announceList);
 		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 }

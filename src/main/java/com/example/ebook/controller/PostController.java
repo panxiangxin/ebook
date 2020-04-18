@@ -1,5 +1,6 @@
 package com.example.ebook.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.cache.BookTagCache;
 import com.example.ebook.cache.HotTagCache;
@@ -9,8 +10,6 @@ import com.example.ebook.dto.PostUpDTO;
 import com.example.ebook.dto.TagDTO;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
-import com.example.ebook.mapper.PostMapper;
-import com.example.ebook.model.Post;
 import com.example.ebook.model.User;
 import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.PostService;
@@ -81,8 +80,11 @@ public class PostController {
 	public Object post(@PathVariable("id") Long id) {
 		
 		PostDTO postDTO = postService.getById(id);
-		
-		return new ResponseResult<>(ResultCode.CLICK_OK, postDTO);
+		List<PostDTO> postDTOS = postService.selectRelated(postDTO);
+		JSONObject object = new JSONObject();
+		object.put("post", postDTO);
+		object.put("related", postDTOS);
+		return new ResponseResult<>(ResultCode.CLICK_OK, object);
 	}
 	
 	@GetMapping("/tag")
