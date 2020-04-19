@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.example.ebook.annotation.AdminUser;
 import com.example.ebook.annotation.UserLoginToken;
 import com.example.ebook.dto.*;
+import com.example.ebook.enums.RoleTypeEnum;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
@@ -122,6 +123,22 @@ public class AdminController {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
 		}
 		userService.resetPassword(id);
+		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@UserLoginToken
+	@AdminUser
+	@PutMapping("/user/status")
+	public Object changeUserStatus(@RequestParam("status") Integer status, @RequestParam("userId") Long id) {
+		
+		User userById = userService.findUserById(id);
+		
+		if (RoleTypeEnum.isExist(status)) {
+			userById.setStatus(status);
+			userService.update(userById);
+		} else {
+			throw new MyException(ResultCode.ROLE_NOT_FOUND);
+		}
 		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
 	

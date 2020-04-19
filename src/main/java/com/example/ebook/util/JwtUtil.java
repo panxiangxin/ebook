@@ -18,7 +18,6 @@ import java.util.Date;
 public class JwtUtil {
 	
 	private static final int TOKEN_EXPIRE_TIME = 12 * 60 * 60 * 1000;
-	
 	public static String getToken(User user) {
 		String token="";
 		Date start = new Date();
