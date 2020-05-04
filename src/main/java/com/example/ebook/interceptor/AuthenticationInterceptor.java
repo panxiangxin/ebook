@@ -73,7 +73,12 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
 				}
 				// 验证 token
 				token = token.replaceAll("\"", "");
-				JWTVerifier jwtVerifier = JWT.require(Algorithm.HMAC256(user.getPassword())).build();
+				JWTVerifier jwtVerifier;
+				if (user.getPassword() == null) {
+					 jwtVerifier = JWT.require(Algorithm.HMAC256(user.getAccountId())).build();
+				} else {
+					 jwtVerifier = JWT.require(Algorithm.HMAC256(user.getPassword())).build();
+				}
 				try {
 					jwtVerifier.verify(token);
 				} catch (JWTVerificationException e) {

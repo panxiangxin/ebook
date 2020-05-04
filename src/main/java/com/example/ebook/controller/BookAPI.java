@@ -21,6 +21,8 @@ import com.example.ebook.model.User;
 import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.*;
 import com.example.ebook.util.OrderCodeFactory;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -66,12 +68,23 @@ public class BookAPI {
 		return new ResponseResult<>(ResultCode.CLICK_OK, bookList);
 	}
 	
+	@PostMapping("/bookPage")
+	public Object booksCate(@RequestParam(value = "tags",defaultValue = "全部") String tags,
+						@RequestParam(value = "page",defaultValue = "1") Integer page,
+						@RequestParam(value = "size",defaultValue = "5") Integer size){
+		System.out.println(page + "" + size);
+		PageInfo<ReturnBookDTO> list = bookService.list(tags, page, size);
+		return new ResponseResult<>(ResultCode.CLICK_OK, list);
+	}
+	
+	@GetMapping("/counts")
+	public Object count() {
+		Long counts = bookService.counts();
+		return new ResponseResult<>(ResultCode.CLICK_OK, counts);
+	}
 	@GetMapping("/getBook")
 	public Object book(String bookId, HttpServletRequest request) {
-		
-		
 		ReturnBookDTO returnBook = bookService.findBookHasBought(bookId, request);
-		
 		return new ResponseResult<>(ResultCode.CLICK_OK, returnBook);
 	}
 	
@@ -123,7 +136,6 @@ public class BookAPI {
 	@GetMapping("/download")
 	public Object download(@RequestParam("userId") String userId, @RequestParam("bookId") String bookId) throws IOException {
 		return bookService.downloadBook(userId, bookId);
-		
 	}
 	
 	@GetMapping("/hotBook")
@@ -138,4 +150,5 @@ public class BookAPI {
 		List<HotTagDTO> hotBookTags = bookTagCache.getHotBookTags();
 		return new ResponseResult<>(ResultCode.CLICK_OK, hotBookTags);
 	}
+	
 }

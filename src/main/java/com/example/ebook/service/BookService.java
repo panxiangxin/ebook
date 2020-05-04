@@ -9,6 +9,8 @@ import com.example.ebook.mapper.BookExtMapper;
 import com.example.ebook.mapper.BookMapper;
 import com.example.ebook.mapper.ChapterMapper;
 import com.example.ebook.model.*;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +77,43 @@ public class BookService {
 		return returnBookDTOS;
 	}
 	
+	public PageInfo<ReturnBookDTO> list(String tags, Integer page, Integer size) {
+		
+		PageInfo<Book> info;
+		List<Book> books;
+		if (StringUtils.isBlank(tags) || StringUtils.equals(tags, "全部")) {
+			BookExample bookExample = new BookExample();
+			bookExample.createCriteria()
+					.andBookNameIsNotNull();
+			bookExample.setOrderByClause("id desc");
+			
+			PageHelper.startPage(page, size);
+			books = bookMapper.selectByExampleWithBLOBs(bookExample);
+			info = new PageInfo<>(books);
+			
+		} else {
+			String[] tag = StringUtils.split(tags, ',');
+			String regexpTag = Arrays
+									   .stream(tag)
+									   .filter(StringUtils::isNotBlank)
+									   .map(t -> t.replace("+", "").replace("*", "").replace("?", ""))
+									   .filter(StringUtils::isNotBlank)
+									   .collect(Collectors.joining("|"));
+			PageHelper.startPage(page, size);
+			books = bookExtMapper.selectRelated(regexpTag);
+			info = new PageInfo<>(books);
+		}
+		List<ReturnBookDTO> returnBookDTOS = books.stream().map(book -> {
+			ReturnBookDTO returnBookDTO = new ReturnBookDTO();
+			BeanUtils.copyProperties(book, returnBookDTO);
+			return returnBookDTO;
+		}).collect(Collectors.toList());
+		PageInfo<ReturnBookDTO> infos = new PageInfo<>(returnBookDTOS);
+		BeanUtils.copyProperties(info,infos);
+		infos.setList(returnBookDTOS);
+		return infos;
+	}
+	
 	public Book getBookById(String bookId) {
 		Long id = Long.parseLong(bookId);
 		return bookMapper.selectByPrimaryKey(id);
@@ -113,7 +152,7 @@ public class BookService {
 		BeanUtils.copyProperties(book, returnBookDTO);
 		
 		String oldToken = request.getHeader("token");
-		if (StringUtils.isNotBlank(oldToken)) {
+		if (StringUtils.isNotBlank(oldToken) && !"null".equals(oldToken)) {
 			String id = JWT.decode(oldToken).getAudience().get(0);
 			Long userId = Long.parseLong(id);
 			List<BookOrder> bookOrder = bookOrderService.findOrderByUserIdAndBookId(userId, bookId);
@@ -195,4 +234,9 @@ public class BookService {
 		}
 		return fileService.downloadFile(book.getBookUrl());
 	}
+	
+	public long counts() {
+		return bookMapper.countByExample(new BookExample());
+	}
+	
 }

@@ -1,6 +1,9 @@
 package com.example.ebook.service;
 
 import com.example.ebook.dto.LoginUserDTO;
+import com.example.ebook.dto.WeChatKey;
+import com.example.ebook.dto.WeChatUserInfo;
+import com.example.ebook.enums.Gender;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.mapper.BookMapper;
@@ -134,5 +137,46 @@ public class UserService {
 		User user = userMapper.selectByPrimaryKey(id);
 		user.setPassword("1234");
 		userMapper.updateByPrimaryKeySelective(user);
+	}
+	
+	public User loginOrRegister(WeChatUserInfo userInfo, WeChatKey wxOpenId) {
+		
+		UserExample example = new UserExample();
+		example.createCriteria()
+				.andAccountIdEqualTo(wxOpenId.getOpenid());
+		List<User> users = userMapper.selectByExample(example);
+		if (users.size() == 0) {
+			User user = new User();
+			user.setAccountId(wxOpenId.getOpenid());
+			user.setUserName(userInfo.getNickName());
+			if (userInfo.getGender().equals(Gender.MAN.getValue())) {
+				user.setSex(Gender.MAN.getName());
+			} else {
+				user.setSex(Gender.WOMAN.getName());
+			}
+			user.setStatus(0);
+			user.setStamps((double) 20);
+			user.setGmtModified(System.currentTimeMillis());
+			user.setGmtCreate(System.currentTimeMillis());
+			user.setAvatarUrl(userInfo.getAvatarUrl());
+			userMapper.insertSelective(user);
+		} else {
+			User user = users.get(0);
+			user.setAvatarUrl(userInfo.getAvatarUrl());
+			user.setUserName(userInfo.getNickName());
+			if (userInfo.getGender().equals(Gender.MAN.getValue())) {
+				user.setSex(Gender.MAN.getName());
+			} else {
+				user.setSex(Gender.WOMAN.getName());
+			}
+			UserExample userExample = new UserExample();
+			userExample.createCriteria()
+					.andAccountIdEqualTo(wxOpenId.getOpenid());
+			userMapper.updateByExampleSelective(user, userExample);
+		}
+		example.clear();
+		example.createCriteria().andAccountIdEqualTo(wxOpenId.getOpenid());
+		List<User> usersList = userMapper.selectByExample(example);
+		return usersList.get(0);
 	}
 }

@@ -3,17 +3,15 @@ package com.example.ebook.controller;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.auth0.jwt.JWT;
-import com.example.ebook.dto.LoginUserDTO;
+import com.example.ebook.dto.*;
 import com.example.ebook.annotation.UserLoginToken;
-import com.example.ebook.dto.RegisterUserDTO;
-import com.example.ebook.dto.UpdateUserDTO;
-import com.example.ebook.dto.UserReturnDTO;
 import com.example.ebook.enums.RoleTypeEnum;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.model.Book;
 import com.example.ebook.model.User;
+import com.example.ebook.provider.WeChatUserProvider;
 import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.FileService;
 import com.example.ebook.service.NotificationService;
@@ -29,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -44,6 +43,8 @@ public class UserAPI {
 	
 	@Autowired
 	private UserService userService;
+	@Autowired
+	private WeChatUserProvider weChatUserProvider;
 	@Autowired
 	private NotificationService notificationService;
 	@Autowired
@@ -72,6 +73,25 @@ public class UserAPI {
 			}
 			return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 		}
+	}
+	
+	@PostMapping("/loginByWeiXin")
+	public Object loginByWeiXin(@RequestBody Map<String,Object> list) {
+		
+		String code = (String) list.get("code");
+		Map<String,Object> userInfoList = (Map<String, Object>) list.get("userInfo");
+		WeChatUserInfo userInfo = JSONObject.parseObject(JSONObject.toJSONString(userInfoList.get("userInfo")), WeChatUserInfo.class);
+		userInfo.setEncryptedData((String) userInfoList.get("encryptedData"));
+		userInfo.setSignature((String) userInfoList.get("signature"));
+		userInfo.setIv((String) userInfoList.get("iv"));
+		WeChatKey wxOpenId = weChatUserProvider.getWxOpenId(code);
+		User user = userService.loginOrRegister(userInfo, wxOpenId);
+		//生成token 根据openId和userName
+		String tokenByWeiChat = JwtUtil.getTokenByWeiChat(user);
+		JSONObject object = new JSONObject();
+		object.put("token", tokenByWeiChat);
+		object.put("userInfo", user);
+		return new ResponseResult<>(ResultCode.CLICK_OK, object);
 	}
 	
 	@PostMapping("/register")
@@ -139,7 +159,7 @@ public class UserAPI {
 		if (userById == null) {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
 		}
-		
+		System.out.println(updateUserDTO);
 		User existsUser = new User();
 		existsUser.setId(updateUserDTO.getId());
 		existsUser.setUserName(updateUserDTO.getUsername());
@@ -149,21 +169,22 @@ public class UserAPI {
 		existsUser.setBio(updateUserDTO.getBio());
 		existsUser.setQq(updateUserDTO.getQq());
 		existsUser.setMail(updateUserDTO.getMail());
-		existsUser.setGmtCreate(System.currentTimeMillis());
 		if (file != null) {
 			String avatarUrl = fileService.upload(file, request, UpFileTypeEnum.USER_AVATAR);
 			existsUser.setAvatarUrl(avatarUrl);
 		}
 		userService.update(existsUser);
 		userById = userService.findUserById(updateUserDTO.getId());
+		String token = JwtUtil.getToken(userById);
 		UserReturnDTO userReturnDTO = new UserReturnDTO();
 		BeanUtils.copyProperties(userById, userReturnDTO);
 		userReturnDTO.setUnReadCount(notificationService.unReadCount(userById.getId()));
+		jsonObject.put("token", token);
 		jsonObject.put("user", userReturnDTO);
 		return new ResponseResult<>(ResultCode.CLICK_OK, jsonObject);
 	}
 	
-	
+	@UserLoginToken
 	@GetMapping("/getUserBook/{id}")
 	public Object userBook(@PathVariable("id") Long id) {
 		

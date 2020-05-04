@@ -12,9 +12,12 @@ import com.example.ebook.mapper.UserMapper;
 import com.example.ebook.model.Post;
 import com.example.ebook.model.PostExample;
 import com.example.ebook.model.User;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -195,5 +198,59 @@ public class PostService {
 			return questionDTO;
 		}).collect(Collectors.toList());
 		return questionDTOS;
+	}
+	
+	public Long count() {
+		return postMapper.countByExample(new PostExample());
+	}
+	
+	public PageInfo<PostDTO> list(Integer page, Integer size, String sort, String search, String tag) {
+		
+		if (StringUtils.isNotBlank(search)) {
+			String[] tags = StringUtils.split(search, " ");
+			search = Arrays
+							 .stream(tags)
+							 .filter(StringUtils::isNotBlank)
+							 .map(t -> t.replace("+", "").replace("*", "").replace("?", ""))
+							 .filter(StringUtils::isNotBlank)
+							 .collect(Collectors.joining("|"));
+		}
+		
+		QueryPostDTO queryPostDTO = new QueryPostDTO();
+		queryPostDTO.setSearch(search);
+		
+		if (StringUtils.isNotBlank(tag)) {
+			tag = tag.replace("+", "").replace("*", "").replace("?", "");
+			queryPostDTO.setTag(tag);
+		}
+		for (SortEnum sortEnum : SortEnum.values()) {
+			if (sortEnum.name().toLowerCase().equals(sort)) {
+				queryPostDTO.setSort(sort);
+				if (sortEnum == SortEnum.HOT7) {
+					queryPostDTO.setTime(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 7);
+				}
+				if (sortEnum == SortEnum.HOT30) {
+					queryPostDTO.setTime(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30);
+				}
+				break;
+			}
+		}
+		PageHelper.startPage(page, size);
+		List<Post> posts = postExtMapper.selectBySearchAndTag(queryPostDTO);
+		PageInfo<Post> info = new PageInfo<>(posts);
+		
+		List<PostDTO> postDTOS = posts.stream().map(post -> {
+			User user = userMapper.selectByPrimaryKey(post.getCreator());
+			PostDTO postDTO = new PostDTO();
+			BeanUtils.copyProperties(post, postDTO);
+			postDTO.setUser(user);
+			return postDTO;
+		}).collect(Collectors.toList());
+		
+		PageInfo<PostDTO> infos = new PageInfo<>(postDTOS);
+		BeanUtils.copyProperties(info, infos);
+		infos.setList(postDTOS);
+		
+		return infos;
 	}
 }

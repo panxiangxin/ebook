@@ -15,6 +15,7 @@ import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.PostService;
 import com.example.ebook.service.UserService;
 import com.example.ebook.util.JwtUtil;
+import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,6 +53,23 @@ public class PostController {
 		postService.createOrUpdate(postUpDTO, userIdByToken);
 		
 		return new ResponseResult<>(ResultCode.CLICK_OK);
+	}
+	
+	@GetMapping("/postCount")
+	public Object count() {
+		Long count = postService.count();
+		return new ResponseResult<>(ResultCode.CLICK_OK, count);
+	}
+	
+	@PostMapping("/postPage")
+	public Object postPage(@RequestParam(value = "search", required = false) String search,
+						   @RequestParam(value = "tag", required = false) String tag,
+						   @RequestParam(value = "page", defaultValue = "1") Integer page,
+						   @RequestParam(value = "size", defaultValue = "5") Integer size,
+						   @RequestParam(value = "sort", defaultValue = "new") String sort) {
+		
+		PageInfo<PostDTO> list = postService.list(page, size, sort, search, tag);
+		return new ResponseResult<>(ResultCode.CLICK_OK, list);
 	}
 	
 	@GetMapping("/postList")

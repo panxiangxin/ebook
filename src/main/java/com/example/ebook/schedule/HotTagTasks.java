@@ -38,19 +38,21 @@ public class HotTagTasks {
 		while (offset == 0 || list.size() == limit) {
 			list = postMapper.selectByExampleWithBLOBsWithRowbounds(new PostExample(),new RowBounds(offset,limit));
 			list.forEach(post -> {
-				String[] tags = StringUtils.split(post.getTag(), ",");
-				for (String tag : tags) {
-					HotTagDTO priority = priorities.get(tag);
-					if (priority != null) {
-						priority.setPostCount(priority.getPostCount() + 1);
-						priority.setCommentCount(priority.getCommentCount()+ post.getCommentCount());
-					}else {
-						priority = new HotTagDTO();
-						priority.setName(tag);
-						priority.setPostCount(1);
-						priority.setCommentCount(post.getCommentCount());
+				if (post.getTag() != null) {
+					String[] tags = StringUtils.split(post.getTag(), ",");
+					for (String tag : tags) {
+						HotTagDTO priority = priorities.get(tag);
+						if (priority != null) {
+							priority.setPostCount(priority.getPostCount() + 1);
+							priority.setCommentCount(priority.getCommentCount()+ post.getCommentCount());
+						}else {
+							priority = new HotTagDTO();
+							priority.setName(tag);
+							priority.setPostCount(1);
+							priority.setCommentCount(post.getCommentCount());
+						}
+						priorities.put(tag,priority);
 					}
-					priorities.put(tag,priority);
 				}
 			});
 			offset += limit;

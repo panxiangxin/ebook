@@ -9,6 +9,8 @@ import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
 import com.example.ebook.mapper.*;
 import com.example.ebook.model.*;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -176,6 +178,57 @@ public class CommentService {
 			return commentDTO;
 		}).collect(Collectors.toList());
 		return commentDTOS;
+	}
+	
+	public PageInfo<CommentDTO> list(Integer type, Long id, Integer page, Integer size) {
+		
+		CommentExample commentExample = new CommentExample();
+		
+		if (type == null && id == null) {
+			commentExample.createCriteria()
+					.andIdIsNotNull();
+		} else {
+			commentExample.createCriteria()
+					.andParentIdEqualTo(id)
+					.andTypeEqualTo(type);
+		}
+		//获取一级评论
+		commentExample.setOrderByClause("gmt_create desc");
+		PageHelper.startPage(page, size);
+		List<Comment> comments = commentMapper.selectByExampleWithBLOBs(commentExample);
+		PageInfo<Comment> info = new PageInfo<>(comments);
+		
+		if (comments.size() == 0) {
+			return new PageInfo<>(new ArrayList<>());
+		}
+		//获取书籍去重一级评论人id
+		List<Long> userIds = new ArrayList<>();
+		Set<Long> uniqueValues = new HashSet<>();
+		for (Comment comment : comments) {
+			Long commentator = comment.getCommentator();
+			if (uniqueValues.add(commentator)) {
+				userIds.add(commentator);
+			}
+		}
+		//获取一级评论人以及转换成map
+		UserExample userExample = new UserExample();
+		userExample.createCriteria()
+				.andIdIn(userIds);
+		List<User> users = userMapper.selectByExample(userExample);
+		Map<Long, User> userMap = users.stream().collect(Collectors.toMap(User::getId, user -> user));
+		
+		//将Comment 转换为CommentDTO
+		List<CommentDTO> commentDTOS = comments.stream().map(comment -> {
+			CommentDTO commentDTO = new CommentDTO();
+			BeanUtils.copyProperties(comment, commentDTO);
+			commentDTO.setCommentUser(userMap.get(comment.getCommentator()));
+			commentDTO.setReply(getSecondComment(comment.getId(), comment.getType() + 1));
+			return commentDTO;
+		}).collect(Collectors.toList());
+		PageInfo<CommentDTO> infos = new PageInfo<>(commentDTOS);
+		BeanUtils.copyProperties(info, infos);
+		infos.setList(commentDTOS);
+		return infos;
 	}
 	
 	public List<CommentDTO> getSecondComment(Long id, int type) {

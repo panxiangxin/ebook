@@ -8,6 +8,8 @@ import com.example.ebook.exception.ResultCode;
 import com.example.ebook.model.Comment;
 import com.example.ebook.response.ResponseResult;
 import com.example.ebook.service.CommentService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +35,7 @@ public class CommentAPI {
 		if (commentCreateDTO.getContent() == null || StringUtils.isBlank(commentCreateDTO.getContent())) {
 			return new ResponseResult<>(ResultCode.CONTENT_EMPTY);
 		}
+		System.out.println(commentCreateDTO);
 		Comment comment = new Comment();
 		comment.setParentId(commentCreateDTO.getParentId());
 		comment.setType(commentCreateDTO.getType());
@@ -54,7 +57,16 @@ public class CommentAPI {
 		List<CommentDTO> list = commentService.list(type, id);
 		return new ResponseResult<>(ResultCode.CLICK_OK, list);
 	}
+	@PostMapping("/commentPage")
+	public Object commentPage(@RequestParam("type") Integer type,
+							  @RequestParam("id") Long id,
+							  @RequestParam(value = "page",defaultValue = "1") Integer page,
+							  @RequestParam(value = "size",defaultValue = "5") Integer size) {
+		PageInfo<CommentDTO> list = commentService.list(type, id, page, size);
+		return new ResponseResult<>(ResultCode.CLICK_OK, list);
+	}
 	
+	@UserLoginToken
 	@GetMapping("/user/{id}")
 	public Object getUserComment(@PathVariable("id") Long id) {
 		List<UserCommentDTO> userCommentById = commentService.getUserCommentById(id, false);

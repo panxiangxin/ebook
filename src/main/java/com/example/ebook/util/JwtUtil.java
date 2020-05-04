@@ -23,13 +23,32 @@ public class JwtUtil {
 		Date start = new Date();
 		long currentTime = System.currentTimeMillis() + TOKEN_EXPIRE_TIME;
 		Date end = new Date(currentTime);
-		token = JWT.create().withAudience(user.getId().toString())
-						.withIssuedAt(start)
-						.withExpiresAt(end)
-						.sign(Algorithm.HMAC256(user.getPassword()));
+		
+		if (user.getPassword() == null && user.getAccountId() != null) {
+			token = JWT.create().withAudience(user.getId().toString())
+							.withIssuedAt(start)
+							.withExpiresAt(end)
+							.sign(Algorithm.HMAC256(user.getAccountId()));
+		} else {
+			token = JWT.create().withAudience(user.getId().toString())
+							.withIssuedAt(start)
+							.withExpiresAt(end)
+							.sign(Algorithm.HMAC256(user.getPassword()));
+		}
 		return token;
 	}
 	
+	public static String getTokenByWeiChat(User user) {
+		String token="";
+		Date start = new Date();
+		long currentTime = System.currentTimeMillis() + TOKEN_EXPIRE_TIME;
+		Date end = new Date(currentTime);
+		token = JWT.create().withAudience(user.getId().toString())
+						.withIssuedAt(start)
+						.withExpiresAt(end)
+						.sign(Algorithm.HMAC256(user.getAccountId()));
+		return token;
+	}
 	public static Long getUserIdByToken(HttpServletRequest request) {
 		
 		String oldToken = request.getHeader("token");
