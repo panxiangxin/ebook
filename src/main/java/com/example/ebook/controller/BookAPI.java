@@ -67,7 +67,11 @@ public class BookAPI {
 		List<ReturnBookDTO> bookList = bookService.list(tags);
 		return new ResponseResult<>(ResultCode.CLICK_OK, bookList);
 	}
-	
+	@GetMapping("/book")
+	public Object bookList(@RequestParam(value = "search", required = false) String search) {
+		List<Book> books = bookService.findBySearch(search);
+		return new ResponseResult<>(ResultCode.CLICK_OK, books);
+	}
 	@PostMapping("/bookPage")
 	public Object booksCate(@RequestParam(value = "tags",defaultValue = "全部") String tags,
 						@RequestParam(value = "page",defaultValue = "1") Integer page,
