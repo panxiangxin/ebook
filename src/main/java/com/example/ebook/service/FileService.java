@@ -32,6 +32,10 @@ import java.util.Objects;
 @Service
 public class FileService {
 	
+	
+	@Value("${web.cc}")
+	private String myWebCc;
+	
 	@Value("${smas.captrue.image.path}")
 	private String captureImagePath;
 	
@@ -68,7 +72,7 @@ public class FileService {
 		String urls = "";
 		try {
 			FileHandleUtils.upload(file.getInputStream(), pathDeposit, fileName);
-			urls = FileHandleUtils.getServerIPPort(request) + File.separator + uri(typeEnum) + fileName;
+			urls = myWebCc + File.separator + uri(typeEnum) + fileName;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

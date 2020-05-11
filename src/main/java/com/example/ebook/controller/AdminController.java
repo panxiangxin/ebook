@@ -9,7 +9,6 @@ import com.example.ebook.enums.RoleTypeEnum;
 import com.example.ebook.enums.UpFileTypeEnum;
 import com.example.ebook.exception.MyException;
 import com.example.ebook.exception.ResultCode;
-import com.example.ebook.mapper.BookMapper;
 import com.example.ebook.model.Book;
 import com.example.ebook.model.User;
 import com.example.ebook.response.ResponseResult;
@@ -329,7 +328,7 @@ public class AdminController {
 	@UserLoginToken
 	@AdminUser
 	@PostMapping("/announce")
-	public Object PostAnnounce(@RequestBody AnnouncementDTO announcementDTO) {
+	public Object postAnnounce(@RequestBody AnnouncementDTO announcementDTO) {
 		announceService.saveOrUpdate(announcementDTO);
 		return new ResponseResult<>(ResultCode.CLICK_OK);
 	}
