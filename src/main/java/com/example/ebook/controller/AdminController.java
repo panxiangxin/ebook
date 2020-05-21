@@ -261,6 +261,7 @@ public class AdminController {
 	public Object comment() {
 		
 		List<UserCommentDTO> userCommentById = commentService.getUserCommentById(null, true);
+		
 		return new ResponseResult<>(ResultCode.CLICK_OK, userCommentById);
 	}
 	

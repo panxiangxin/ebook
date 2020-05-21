@@ -391,7 +391,8 @@ public class CommentService {
 			}).collect(Collectors.toList());
 			userCommentDTOS.addAll(postCommentComments);
 		}
-		return userCommentDTOS;
+		List<UserCommentDTO> collect = userCommentDTOS.stream().filter(commentDTO -> commentDTO.getCommentUser() != null).collect(Collectors.toList());
+		return collect;
 	}
 	
 	private void createNotify(Comment record, Long receiver, NotificationEnum notificationEnum, String notifierName, String outerTitle, Long outerId) {

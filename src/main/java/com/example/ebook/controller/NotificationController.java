@@ -51,6 +51,7 @@ public class NotificationController {
 	public Object read(@PathVariable(name = "id") Long id, HttpServletRequest request) {
 		Long userId = JwtUtil.getUserIdByToken(request);
 		User user = userService.findUserById(userId);
+		
 		if (user == null) {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
 		}

@@ -99,7 +99,7 @@ public class PostService {
 			BeanUtils.copyProperties(post, postDTO);
 			postDTO.setUser(user);
 			return postDTO;
-		}).collect(Collectors.toList());
+		}).filter(postDTO -> postDTO.getUser() != null).collect(Collectors.toList());
 		
 		return postDTOS;
 	}

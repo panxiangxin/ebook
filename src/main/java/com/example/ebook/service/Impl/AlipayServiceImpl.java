@@ -64,7 +64,7 @@ public class AlipayServiceImpl implements AlipayService {
 											+ "\"body\":\"商品名称\","
 											+ "\"timeout_express\":\"90m\","
 											+ "\"product_code\":\"FAST_INSTANT_TRADE_PAY\"}");
-		
+		System.out.println(alipayRequest.getBizContent());
 		/**转换格式*/
 		return alipayClient.pageExecute(alipayRequest).getBody().replace('\"','\'').replace('\n',' ');
 	}

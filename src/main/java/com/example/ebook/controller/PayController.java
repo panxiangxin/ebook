@@ -51,8 +51,7 @@ public class PayController {
 		}else {
 			pay = "weixin";
 		}
-		
-		
+		System.out.println(pay);
 		return new ResponseResult<>(ResultCode.CLICK_OK, pay);
 	}
 	

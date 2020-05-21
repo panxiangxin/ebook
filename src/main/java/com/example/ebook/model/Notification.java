@@ -1,5 +1,8 @@
 package com.example.ebook.model;
 
+import lombok.Data;
+
+@Data
 public class Notification {
     /**
      *

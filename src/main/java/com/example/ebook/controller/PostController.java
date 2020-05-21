@@ -47,8 +47,6 @@ public class PostController {
 		if (userById == null) {
 			throw new MyException(ResultCode.USER_NOT_FOUND);
 		}
-		//对于post的相关判断
-		System.out.println(postUpDTO);
 		
 		postService.createOrUpdate(postUpDTO, userIdByToken);
 		

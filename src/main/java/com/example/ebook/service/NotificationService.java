@@ -39,7 +39,6 @@ public class NotificationService {
 		if (notifications.size() == 0) {
 			return new ArrayList<>();
 		}
-		
 		return notifications.stream().map(notification -> {
 			NotificationDTO notificationDTO = new NotificationDTO();
 			BeanUtils.copyProperties(notification, notificationDTO);
