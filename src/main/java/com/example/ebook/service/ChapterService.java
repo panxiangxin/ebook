@@ -33,6 +33,7 @@ public class ChapterService {
 	@Async
 	public void splitBook(MultipartFile mFile,String bookName,Long bookId) throws Exception {
 		File file = MultipartFileToFile.multipartFileToFile(mFile);
+		System.out.println(file.getName());
 		List<Content> contentList = BuNovelGenerate.read(bookName, file);
 		//存入数据库
 		contentList.forEach(content -> {

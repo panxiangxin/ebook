@@ -10,7 +10,7 @@ import java.io.IOException;
  */
 public class AlipayConfig {
 	//这里用natapp内外网穿透
-	public static final String natUrl = "http://panxx.natapp1.cc";
+	public static final String natUrl = "https://panxx.mynatapp.cc";
 	
 	// 应用ID,您的APPID，收款账号既是您的APPID对应支付宝账号
 	public static String APP_ID = "2016101800719531";

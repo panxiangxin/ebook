@@ -25,7 +25,7 @@ public class BuNovelGenerate {
 		read(bookName, file);
 	}
 	public static List<Content> read(String bookName, File fileNadirs) throws FileNotFoundException {
-		
+		System.out.println(bookName + " " + fileNadirs.getName());
 		List<Content> contents = new ArrayList<>();
 		try {
 			// 编码格式
@@ -34,6 +34,7 @@ public class BuNovelGenerate {
 			if (fileNadirs.isFile() && fileNadirs.exists()) {
 				// 输入流
 				// 考虑到编码格式
+				System.out.println("okok");
 				InputStreamReader read = new InputStreamReader(new FileInputStream(fileNadirs), encoding);
 				BufferedReader bufferedReader = new BufferedReader(read);
 				String lineTxt = null;
@@ -86,6 +87,7 @@ public class BuNovelGenerate {
 							content.setId(line);
 							substring = newStr.substring(indexOf1, indexOf);
 							content.setContent(substring);
+							System.out.println(content);
 							contents.add(content);
 						}
 					}
